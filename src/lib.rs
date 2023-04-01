@@ -30,3 +30,37 @@ pub trait Logger {
     fn error(&self, message: &str) { self.log(Level::ERROR, message); }
     fn critical(&self, message: &str) { self.log(Level::CRITICAL, message); }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::SystemTime;
+
+    use crate::{Level, Logger, single_threaded::{LogObject, SimpleLogger}};
+
+    #[test]
+    fn test_basic() {
+        let start_time = SystemTime::now();
+        let logger = SimpleLogger::new(|log_object: LogObject| {
+            assert!(log_object.time >= start_time);
+            assert!(log_object.time <= SystemTime::now());
+            assert_eq!(log_object.channel_id, None);
+            assert_eq!(log_object.severity, Level::DEBUG);
+            assert_eq!(log_object.message, "message");
+        });
+        logger.debug("message");
+        logger.log(Level::DEBUG, "message");
+    }
+
+    #[test]
+    fn test_channels() {
+        let mut counter = 0;
+        let logger = SimpleLogger::new(|log_object: LogObject| {
+            assert_eq!(log_object.channel_id, Some(counter));
+            counter += 1;
+        });
+        for i in 0..10 {
+            let channel = logger.channel(i);
+            channel.debug("message");
+        }
+    }
+}
