@@ -1,26 +1,32 @@
-// loggers (configuration at compile-time)
-//   - channels
-//   - levels
-//   - output/formatting function
-// - filtering
-//   - by channel globally
-//   - by level per channel or globally
-// - custom output function (that formats) supplied with:
-//   - time
-//   - thread
-//   - level
-//   - channel
+pub mod single_threaded;
+pub mod multi_threaded;
 
-pub use macros::levels;
-
-pub struct Levels<const N: usize> {
-    pub data: [(&'static str, usize); N],
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Level {
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    CRITICAL,
 }
 
-const DEFAULT_LEVELS: Levels<5> = levels![
-    0 => "DEBUG",
-    1 => "INFO",
-    2 => "WARNING",
-    3 => "ERROR",
-    4 => "CRITICAL",
-];
+impl Level {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Level::DEBUG    => "DEBUG",
+            Level::INFO     => "INFO",
+            Level::WARNING  => "WARNING",
+            Level::ERROR    => "ERROR",
+            Level::CRITICAL => "CRITICAL",
+        }
+    }
+}
+
+pub trait Logger {
+    fn log(&self, severity: Level, message: &str);
+    fn debug(&self, message: &str) { self.log(Level::DEBUG, message); }
+    fn info(&self, message: &str) { self.log(Level::INFO, message); }
+    fn warning(&self, message: &str) { self.log(Level::WARNING, message); }
+    fn error(&self, message: &str) { self.log(Level::ERROR, message); }
+    fn critical(&self, message: &str) { self.log(Level::CRITICAL, message); }
+}
