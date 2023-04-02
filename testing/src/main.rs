@@ -1,7 +1,7 @@
 use logidize::{Logger, single_threaded::*, utils::*};
 
 fn main() {
-    let logger = SimpleLogger::new(StdErrSink::new(|id| Some(id)));
+    let logger: SimpleLogger<StdErrSink> = Default::default();
     logger.debug("debug");
     logger.info("info");
     logger.warning("warning");

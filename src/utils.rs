@@ -1,4 +1,4 @@
-use std::{io::Write};
+use std::{io::Write, time::UNIX_EPOCH};
 use const_format::concatcp;
 
 use super::*;
@@ -27,7 +27,17 @@ impl<T: FnMut(usize) -> Option<DisplayType>, DisplayType: Display> ChannelMap fo
 	}
 }
 
-pub struct StdErrSink<M: ChannelMap> {
+#[derive(Clone, Copy, Debug, Default)]
+pub struct InvisibleChannelMap;
+impl ChannelMap for InvisibleChannelMap {
+	type DisplayType = usize;
+
+	fn map(&mut self, channel_id: usize) -> Option<Self::DisplayType> {
+		Some(channel_id)
+	}
+}
+
+pub struct StdErrSink<M: ChannelMap = InvisibleChannelMap> {
 	channel_map: M,
 	min_severity: Level,
 	mute: bool,
@@ -92,7 +102,10 @@ impl<M: ChannelMap> Sink for StdErrSink<M> {
 			Level::ERROR    => concatcp!(SET_COLOR_BRIGHT_RED    , Level::ERROR.as_str()   , RESET_COLOR),
 			Level::CRITICAL => concatcp!(SET_COLOR_BRIGHT_MAGENTA, Level::CRITICAL.as_str(), RESET_COLOR),
 		};
-		// TODO add timestamp
-		let _ = writeln!(std::io::stderr(), "[{}][{}]: {}", level, channel_name, log_object.message);
+		let secs_since_epoch = match log_object.time.duration_since(UNIX_EPOCH) {
+			Ok(duration) => duration.as_secs() as i64,
+			Err(e) => -(e.duration().as_secs() as i64),
+		};
+		let _ = writeln!(std::io::stderr(), "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message);
 	}
 }
