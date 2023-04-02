@@ -2,6 +2,7 @@ use std::{thread::{self, ThreadId}, time::SystemTime, fmt::Display};
 
 pub mod single_threaded;
 pub mod multi_threaded;
+pub mod utils;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level {
