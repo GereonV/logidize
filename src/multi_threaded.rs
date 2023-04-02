@@ -50,13 +50,13 @@ impl<S: Sink> ChannelLogger<'_, S> {
 
 impl<S: Sink> Logger for SimpleLogger<S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(None, severity, message))
+		self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(0, severity, message))
 	}
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(Some(self.id), severity, message))
+		self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(self.id, severity, message))
 	}
 }
 
@@ -86,11 +86,7 @@ mod tests {
     fn test_channels() {
         let mut counters = [0; 10];
         let logger = SimpleLogger::new(|log_object: LogObject| {
-            let idx = match log_object.channel_id {
-                None => 0,
-                Some(id) => id,
-            };
-            counters[idx] += 1;
+            counters[log_object.channel_id] += 1;
         });
         std::thread::scope(|scope| {
             for i in 1..10 {

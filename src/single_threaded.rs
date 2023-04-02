@@ -50,13 +50,13 @@ impl<S: Sink> ChannelLogger<'_, S> {
 
 impl<S: Sink> Logger for SimpleLogger<S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().consume(LogObject::new(None, severity, message))
+		self.sink().consume(LogObject::new(0, severity, message))
 	}
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().consume(LogObject::new(Some(self.channel_id), severity, message))
+		self.sink().consume(LogObject::new(self.channel_id, severity, message))
 	}
 }
 
@@ -72,7 +72,7 @@ mod tests {
         let logger = SimpleLogger::new(|log_object: LogObject| {
             assert!(log_object.time >= start_time);
             assert!(log_object.time <= SystemTime::now());
-            assert_eq!(log_object.channel_id, None);
+            assert_eq!(log_object.channel_id, 0);
             assert_eq!(log_object.severity, Level::DEBUG);
             assert_eq!(log_object.message, "message");
         });
@@ -84,7 +84,7 @@ mod tests {
     fn test_channels() {
         let mut counter = 0;
         let logger = SimpleLogger::new(|log_object: LogObject| {
-            assert_eq!(log_object.channel_id, Some(counter));
+            assert_eq!(log_object.channel_id, counter);
             counter += 1;
         });
         for i in 0..10 {

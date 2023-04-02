@@ -1,4 +1,4 @@
-use std::{thread::{self, ThreadId}, time::SystemTime};
+use std::{thread::{self, ThreadId}, time::SystemTime, fmt::Display};
 
 pub mod single_threaded;
 pub mod multi_threaded;
@@ -13,7 +13,7 @@ pub enum Level {
 }
 
 impl Level {
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Level::DEBUG    => "DEBUG",
             Level::INFO     => "INFO",
@@ -21,6 +21,12 @@ impl Level {
             Level::ERROR    => "ERROR",
             Level::CRITICAL => "CRITICAL",
         }
+    }
+}
+
+impl Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
@@ -35,7 +41,7 @@ pub trait Logger {
 
 #[derive(Clone, Copy, Debug)]
 pub struct LogObject<'a> {
-    pub channel_id: Option<usize>,
+    pub channel_id: usize, // 0 = no channel
     pub message: &'a str,
     pub severity: Level,
     pub thread_id: ThreadId,
@@ -43,7 +49,7 @@ pub struct LogObject<'a> {
 }
 
 impl LogObject<'_> {
-	fn new<'a>(channel_id: Option<usize>, severity: Level, message: &'a str) -> LogObject<'a> {
+	fn new<'a>(channel_id: usize, severity: Level, message: &'a str) -> LogObject<'a> {
 		LogObject {
 			channel_id,
 			message,
