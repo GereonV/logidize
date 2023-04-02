@@ -21,4 +21,29 @@ fn main() {
     logger.warning("filtered");
     logger.error("unfiltered 1");
     logger.critical("unfiltered 2");
+
+    let logger = SimpleLogger::new(StdErrSink::new(|log_object: &LogObject| {
+        const CHANNELS: [&'static str; 4] = [
+            "Main-Channel",
+            "Rendering-Channel",
+            "Physics-Channel",
+            "Extra-Channel",
+        ];
+        let id = log_object.channel_id;
+        if (log_object.severity as usize) < id {
+            None
+        } else {
+            Some(CHANNELS[id])
+        }
+    }));
+    logger.debug("main");
+    logger.channel(1).debug("filtered");
+    logger.channel(1).info("rendering");
+    logger.channel(2).debug("filtered");
+    logger.channel(2).info("filtered");
+    logger.channel(2).warning("physics");
+    logger.channel(3).debug("filtered");
+    logger.channel(3).info("filtered");
+    logger.channel(3).warning("filtered");
+    logger.channel(3).error("extra");
 }

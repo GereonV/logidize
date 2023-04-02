@@ -16,14 +16,14 @@ pub const RESET_COLOR              : &str = "\x1b[0m";
 pub trait ChannelMap {
 	type DisplayType: Display;
 
-	fn map(&mut self, channel_id: usize) -> Option<Self::DisplayType>;
+	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType>;
 }
 
-impl<T: FnMut(usize) -> Option<DisplayType>, DisplayType: Display> ChannelMap for T {
+impl<T: FnMut(&LogObject) -> Option<DisplayType>, DisplayType: Display> ChannelMap for T {
 	type DisplayType = DisplayType;
 
-	fn map(&mut self, channel_id: usize) -> Option<Self::DisplayType> {
-		self(channel_id)
+	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
+		self(log_object)
 	}
 }
 
@@ -32,8 +32,8 @@ pub struct InvisibleChannelMap;
 impl ChannelMap for InvisibleChannelMap {
 	type DisplayType = usize;
 
-	fn map(&mut self, channel_id: usize) -> Option<Self::DisplayType> {
-		Some(channel_id)
+	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
+		Some(log_object.channel_id)
 	}
 }
 
@@ -64,7 +64,7 @@ impl<M: ChannelMap> Sink for StdErrSink<M> {
 		if self.muted || log_object.severity < self.min_severity {
 			return;
 		}
-		let Some(channel_name) = self.channel_map.map(log_object.channel_id) else {
+		let Some(channel_name) = self.channel_map.map(&log_object) else {
 			return;
 		};
 		let level = match log_object.severity {
