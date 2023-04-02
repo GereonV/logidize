@@ -1,3 +1,4 @@
+use const_format::concatcp;
 use logidize::{*, single_threaded::*, utils::*};
 
 fn main() {
@@ -24,10 +25,10 @@ fn main() {
 
     let logger = SimpleLogger::new(WriteSink::new(StderrWrite::default(), |log_object: &LogObject| {
         const CHANNELS: [&'static str; 4] = [
-            "Main-Channel",
-            "Rendering-Channel",
-            "Physics-Channel",
-            "Extra-Channel",
+            concatcp!(SET_COLOR_BRIGHT_WHITE, "Main-Channel",      RESET_COLOR),
+            concatcp!(SET_COLOR_BRIGHT_WHITE, "Rendering-Channel", RESET_COLOR),
+            concatcp!(SET_COLOR_BRIGHT_WHITE, "Physics-Channel",   RESET_COLOR),
+            concatcp!(SET_COLOR_BRIGHT_WHITE, "Extra-Channel",     RESET_COLOR),
         ];
         let id = log_object.channel_id;
         if (log_object.severity as usize) < id {
