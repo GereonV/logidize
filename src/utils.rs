@@ -13,13 +13,13 @@ pub const SET_COLOR_BRIGHT_WHITE   : &str = "\x1b[1;37m";
 pub const SET_COLOR_DEFAULT        : &str = "\x1b[39m";
 pub const RESET_COLOR              : &str = "\x1b[0m";
 
-pub trait ChannelMap {
+pub trait ChannelFilterMap {
 	type DisplayType: Display;
 
 	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType>;
 }
 
-impl<T: FnMut(&LogObject) -> Option<DisplayType>, DisplayType: Display> ChannelMap for T {
+impl<T: FnMut(&LogObject) -> Option<DisplayType>, DisplayType: Display> ChannelFilterMap for T {
 	type DisplayType = DisplayType;
 
 	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
@@ -28,8 +28,8 @@ impl<T: FnMut(&LogObject) -> Option<DisplayType>, DisplayType: Display> ChannelM
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct InvisibleChannelMap;
-impl ChannelMap for InvisibleChannelMap {
+pub struct InvisibleChannelFilterMap;
+impl ChannelFilterMap for InvisibleChannelFilterMap {
 	type DisplayType = usize;
 
 	fn map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
@@ -37,14 +37,14 @@ impl ChannelMap for InvisibleChannelMap {
 	}
 }
 
-pub struct StdErrSink<M: ChannelMap = InvisibleChannelMap> {
+pub struct StdErrSink<M: ChannelFilterMap = InvisibleChannelFilterMap> {
 	pub channel_map: M,
 	pub log_thread_id: bool,
 	pub min_severity: Level,
 	pub muted: bool,
 }
 
-impl<M: ChannelMap> StdErrSink<M> {
+impl<M: ChannelFilterMap> StdErrSink<M> {
 	pub const fn new(channel_map: M) -> Self {
 		Self {
 			channel_map,
@@ -55,13 +55,13 @@ impl<M: ChannelMap> StdErrSink<M> {
 	}
 }
 
-impl<M: ChannelMap + Default> Default for StdErrSink<M> {
+impl<M: ChannelFilterMap + Default> Default for StdErrSink<M> {
 	fn default() -> Self {
 		Self::new(Default::default())
 	}
 }
 
-impl<M: ChannelMap> Sink for StdErrSink<M> {
+impl<M: ChannelFilterMap> Sink for StdErrSink<M> {
 	fn consume(&mut self, log_object: LogObject) {
 		if self.muted || log_object.severity < self.min_severity {
 			return;
