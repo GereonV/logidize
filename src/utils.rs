@@ -110,9 +110,9 @@ impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
 		};
 		let _ = if self.log_thread_id {
 			let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
-			writeln!(self.output, "[{id}][{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+			writeln!(self.output, "[{id}][{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}][{channel_name}]: {}", log_object.message)
 		} else {
-			writeln!(self.output, "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+			writeln!(self.output, "[{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}][{channel_name}]: {}", log_object.message)
 		};
 	}
 }
