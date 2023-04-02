@@ -13,6 +13,32 @@ pub const SET_COLOR_BRIGHT_WHITE   : &str = "\x1b[1;37m";
 pub const SET_COLOR_DEFAULT        : &str = "\x1b[39m";
 pub const RESET_COLOR              : &str = "\x1b[0m";
 
+#[derive(Clone, Copy, Debug, Default)]
+pub struct StderrWrite;
+
+impl Write for StderrWrite {
+	fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+		std::io::stderr().write(buf)
+	}
+
+	fn flush(&mut self) -> std::io::Result<()> {
+		std::io::stderr().flush()
+	}
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct StdoutWrite;
+
+impl Write for StdoutWrite {
+	fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+		std::io::stdout().write(buf)
+	}
+
+	fn flush(&mut self) -> std::io::Result<()> {
+		std::io::stdout().flush()
+	}
+}
+
 pub trait ChannelFilterMap {
 	type DisplayType: Display;
 
@@ -37,31 +63,33 @@ impl ChannelFilterMap for InvisibleChannelFilterMap {
 	}
 }
 
-pub struct StdErrSink<M: ChannelFilterMap = InvisibleChannelFilterMap> {
+pub struct WriteSink<W: Write = StderrWrite, M: ChannelFilterMap = InvisibleChannelFilterMap> {
 	pub channel_map: M,
 	pub log_thread_id: bool,
 	pub min_severity: Level,
 	pub muted: bool,
+	pub output: W,
 }
 
-impl<M: ChannelFilterMap> StdErrSink<M> {
-	pub const fn new(channel_map: M) -> Self {
+impl<W: Write, M: ChannelFilterMap> WriteSink<W, M> {
+	pub const fn new(output: W, channel_map: M) -> Self {
 		Self {
 			channel_map,
 			log_thread_id: false,
 			min_severity: Level::DEBUG,
 			muted: false,
+			output
 		}
 	}
 }
 
-impl<M: ChannelFilterMap + Default> Default for StdErrSink<M> {
+impl<W: Write + Default, M: ChannelFilterMap + Default> Default for WriteSink<W, M> {
 	fn default() -> Self {
-		Self::new(Default::default())
+		Self::new(Default::default(), Default::default())
 	}
 }
 
-impl<M: ChannelFilterMap> Sink for StdErrSink<M> {
+impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
 	fn consume(&mut self, log_object: LogObject) {
 		if self.muted || log_object.severity < self.min_severity {
 			return;
@@ -82,9 +110,9 @@ impl<M: ChannelFilterMap> Sink for StdErrSink<M> {
 		};
 		let _ = if self.log_thread_id {
 			let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
-			writeln!(std::io::stderr(), "[{id}][{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+			writeln!(self.output, "[{id}][{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
 		} else {
-			writeln!(std::io::stderr(), "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+			writeln!(self.output, "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
 		};
 	}
 }

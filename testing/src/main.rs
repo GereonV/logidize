@@ -1,7 +1,7 @@
 use logidize::{*, single_threaded::*, utils::*};
 
 fn main() {
-    let logger: SimpleLogger<StdErrSink> = Default::default();
+    let logger: SimpleLogger<WriteSink> = Default::default();
     debug!(logger, "debug");
     info!(logger, "info");
     warning!(logger, "warning");
@@ -22,7 +22,7 @@ fn main() {
     error!(logger, "unfiltered 1");
     critical!(logger, "unfiltered 2");
 
-    let logger = SimpleLogger::new(StdErrSink::new(|log_object: &LogObject| {
+    let logger = SimpleLogger::new(WriteSink::new(StderrWrite::default(), |log_object: &LogObject| {
         const CHANNELS: [&'static str; 4] = [
             "Main-Channel",
             "Rendering-Channel",
