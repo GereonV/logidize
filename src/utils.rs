@@ -65,6 +65,7 @@ impl ChannelFilterMap for InvisibleChannelFilterMap {
 
 pub struct WriteSink<W: Write = StderrWrite, M: ChannelFilterMap = InvisibleChannelFilterMap> {
 	pub channel_map: M,
+	pub colors: bool,
 	pub log_thread_id: bool,
 	pub min_severity: Level,
 	pub muted: bool,
@@ -75,6 +76,7 @@ impl<W: Write, M: ChannelFilterMap> WriteSink<W, M> {
 	pub const fn new(output: W, channel_map: M) -> Self {
 		Self {
 			channel_map,
+			colors: true,
 			log_thread_id: false,
 			min_severity: Level::DEBUG,
 			muted: false,
@@ -97,22 +99,28 @@ impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
 		let Some(channel_name) = self.channel_map.filter_map(&log_object) else {
 			return;
 		};
-		let level = match log_object.severity {
-			Level::DEBUG    => concatcp!(SET_COLOR_BRIGHT_CYAN   , Level::DEBUG.as_str()   , RESET_COLOR),
-			Level::INFO     => concatcp!(SET_COLOR_BRIGHT_BLUE   , Level::INFO.as_str()    , RESET_COLOR),
-			Level::WARNING  => concatcp!(SET_COLOR_BRIGHT_YELLOW , Level::WARNING.as_str() , RESET_COLOR),
-			Level::ERROR    => concatcp!(SET_COLOR_BRIGHT_RED    , Level::ERROR.as_str()   , RESET_COLOR),
-			Level::CRITICAL => concatcp!(SET_COLOR_BRIGHT_MAGENTA, Level::CRITICAL.as_str(), RESET_COLOR),
-		};
 		let secs_since_epoch = match log_object.time.duration_since(UNIX_EPOCH) {
 			Ok(duration) => duration.as_secs() as i64,
 			Err(e) => -(e.duration().as_secs() as i64),
 		};
-		let _ = if self.log_thread_id {
-			let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
-			writeln!(self.output, "[{id}][{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}][{channel_name}]: {}", log_object.message)
+		let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
+		let _ = if self.colors {
+			let level = match log_object.severity {
+				Level::DEBUG    => concatcp!(SET_COLOR_BRIGHT_CYAN   , Level::DEBUG.as_str()),
+				Level::INFO     => concatcp!(SET_COLOR_BRIGHT_BLUE   , Level::INFO.as_str()),
+				Level::WARNING  => concatcp!(SET_COLOR_BRIGHT_YELLOW , Level::WARNING.as_str()),
+				Level::ERROR    => concatcp!(SET_COLOR_BRIGHT_RED    , Level::ERROR.as_str()),
+				Level::CRITICAL => concatcp!(SET_COLOR_BRIGHT_MAGENTA, Level::CRITICAL.as_str()),
+			};
+			if self.log_thread_id {
+				writeln!(self.output, "[{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}{channel_name}{RESET_COLOR}]: {}", log_object.message)
+			} else {
+				writeln!(self.output, "[{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}{channel_name}{RESET_COLOR}]: {}", log_object.message)
+			}
+		} else if self.log_thread_id {
+			writeln!(self.output, "[{id}][{secs_since_epoch}][{}][{channel_name}]: {}", log_object.severity.as_str(), log_object.message)
 		} else {
-			writeln!(self.output, "[{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}][{channel_name}]: {}", log_object.message)
+			writeln!(self.output, "[{secs_since_epoch}][{}][{channel_name}]: {}", log_object.severity.as_str(), log_object.message)
 		};
 	}
 }
