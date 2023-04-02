@@ -1,3 +1,5 @@
+use std::{thread::{self, ThreadId}, time::SystemTime};
+
 pub mod single_threaded;
 pub mod multi_threaded;
 
@@ -31,87 +33,33 @@ pub trait Logger {
     fn critical(&self, message: &str) { self.log(Level::CRITICAL, message); }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::time::SystemTime;
+#[derive(Clone, Copy, Debug)]
+pub struct LogObject<'a> {
+    pub channel_id: Option<usize>,
+    pub message: &'a str,
+    pub severity: Level,
+    pub thread_id: ThreadId,
+    pub time: SystemTime,
+}
 
-    use crate::{Level, Logger};
+impl LogObject<'_> {
+	fn new<'a>(channel_id: Option<usize>, severity: Level, message: &'a str) -> LogObject<'a> {
+		LogObject {
+			channel_id,
+			message,
+			severity,
+			thread_id: thread::current().id(),
+			time: SystemTime::now(),
+		}
+	}
+}
 
-    #[test]
-    fn test_basic() {
-        use super::single_threaded::{LogObject, SimpleLogger};
-        let start_time = SystemTime::now();
-        let logger = SimpleLogger::new(|log_object: LogObject| {
-            assert!(log_object.time >= start_time);
-            assert!(log_object.time <= SystemTime::now());
-            assert_eq!(log_object.channel_id, None);
-            assert_eq!(log_object.severity, Level::DEBUG);
-            assert_eq!(log_object.message, "message");
-        });
-        logger.debug("message");
-        logger.log(Level::DEBUG, "message");
-    }
+pub trait Sink {
+	fn consume(&mut self, log_object: LogObject);
+}
 
-    #[test]
-    fn test_channels() {
-        use super::single_threaded::{LogObject, SimpleLogger};
-        let mut counter = 0;
-        let logger = SimpleLogger::new(|log_object: LogObject| {
-            assert_eq!(log_object.channel_id, Some(counter));
-            counter += 1;
-        });
-        for i in 0..10 {
-            let channel = logger.channel(i);
-            channel.debug("message");
-        }
-    }
-
-    #[test]
-    fn test_thread_simple() {
-        use super::multi_threaded::{LogObject, SimpleLogger};
-        let mut counter = 0;
-        let logger = SimpleLogger::new(|_log_object: LogObject| {
-            counter += 1;
-        });
-        std::thread::scope(|scope| {
-            for _ in 0..10 {
-                scope.spawn(|| {
-                    for _ in 0..100_000 {
-                        logger.debug("message");
-                    }
-                });
-            }
-        });
-        assert_eq!(counter, 10 * 100_000);
-    }
-
-    #[test]
-    fn test_thread_channel() {
-        use super::multi_threaded::{LogObject, SimpleLogger};
-        let mut counters = [0; 10];
-        let logger = SimpleLogger::new(|log_object: LogObject| {
-            let idx = match log_object.channel_id {
-                None => 0,
-                Some(id) => id,
-            };
-            counters[idx] += 1;
-        });
-        std::thread::scope(|scope| {
-            for i in 1..10 {
-                let channel = logger.channel(i);
-                scope.spawn(move || {
-                    for _ in 0..(i * 100_000) {
-                        channel.debug("message");
-                    }
-                });
-            }
-            for _ in 0..1_000_000 {
-                logger.debug("message");
-            }
-        });
-        assert_eq!(
-            counters,
-            [1_000_000, 100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000, 900_000],
-        );
-    }
+impl<T: FnMut(LogObject)> Sink for T {
+	fn consume(&mut self, log_object: LogObject) {
+		self(log_object);
+	}
 }

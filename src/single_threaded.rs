@@ -1,29 +1,5 @@
-use std::{time::SystemTime, marker::PhantomData, cell::Cell};
+use std::{marker::PhantomData, cell::Cell};
 use super::*;
-
-#[derive(Clone, Copy, Debug)]
-pub struct LogObject<'a> {
-    pub channel_id: Option<usize>,
-    pub message: &'a str,
-    pub severity: Level,
-    pub time: SystemTime,
-}
-
-impl LogObject<'_> {
-	pub fn new<'a>(channel_id: Option<usize>, severity: Level, message: &'a str) -> LogObject<'a> {
-		LogObject { channel_id, message, severity, time: SystemTime::now() }
-	}
-}
-
-pub trait Sink {
-	fn consume(&mut self, log_object: LogObject);
-}
-
-impl<T: FnMut(LogObject)> Sink for T {
-	fn consume(&mut self, log_object: LogObject) {
-		self(log_object);
-	}
-}
 
 #[derive(Clone, Copy, Default)]
 pub struct SimpleLogger<S: Sink> {
@@ -82,4 +58,38 @@ impl<S: Sink> Logger for ChannelLogger<'_, S> {
 	fn log(&self, severity: Level, message: &str) {
 		self.sink().consume(LogObject::new(Some(self.channel_id), severity, message))
 	}
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::SystemTime;
+
+    use super::*;
+
+    #[test]
+    fn test_simple() {
+        let start_time = SystemTime::now();
+        let logger = SimpleLogger::new(|log_object: LogObject| {
+            assert!(log_object.time >= start_time);
+            assert!(log_object.time <= SystemTime::now());
+            assert_eq!(log_object.channel_id, None);
+            assert_eq!(log_object.severity, Level::DEBUG);
+            assert_eq!(log_object.message, "message");
+        });
+        logger.debug("message");
+        logger.log(Level::DEBUG, "message");
+    }
+
+    #[test]
+    fn test_channels() {
+        let mut counter = 0;
+        let logger = SimpleLogger::new(|log_object: LogObject| {
+            assert_eq!(log_object.channel_id, Some(counter));
+            counter += 1;
+        });
+        for i in 0..10 {
+            let channel = logger.channel(i);
+            channel.debug("message");
+        }
+    }
 }

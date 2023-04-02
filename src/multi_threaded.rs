@@ -1,36 +1,5 @@
-use std::{thread, thread::ThreadId, time::SystemTime, sync::{Mutex, LockResult, MutexGuard}};
+use std::sync::{Mutex, LockResult, MutexGuard};
 use super::*;
-
-#[derive(Clone, Copy, Debug)]
-pub struct LogObject<'a> {
-    pub channel_id: Option<usize>,
-    pub message: &'a str,
-    pub severity: Level,
-	pub thread_id: ThreadId,
-    pub time: SystemTime,
-}
-
-impl LogObject<'_> {
-	pub fn new<'a>(channel_id: Option<usize>, severity: Level, message: &'a str) -> LogObject<'a> {
-		LogObject {
-			channel_id,
-			message,
-			severity,
-			thread_id: thread::current().id(),
-			time: SystemTime::now(),
-		}
-	}
-}
-
-pub trait Sink {
-	fn consume(&mut self, log_object: LogObject);
-}
-
-impl<T: FnMut(LogObject)> Sink for T {
-	fn consume(&mut self, log_object: LogObject) {
-		self(log_object);
-	}
-}
 
 #[derive(Default)]
 pub struct SimpleLogger<S: Sink> {
@@ -39,7 +8,7 @@ pub struct SimpleLogger<S: Sink> {
 
 impl<S: Sink + Clone> Clone for SimpleLogger<S> {
 	fn clone(&self) -> Self {
-		Self { sink: Mutex::new(self.sink.lock().unwrap().clone()) }
+		Self { sink: Mutex::new(self.sink.lock().expect("SimpleLogger::clone() failed because the logger was poisoned").clone()) }
 	}
 }
 
@@ -81,12 +50,64 @@ impl<S: Sink> ChannelLogger<'_, S> {
 
 impl<S: Sink> Logger for SimpleLogger<S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().unwrap().consume(LogObject::new(None, severity, message))
+		self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(None, severity, message))
 	}
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
 	fn log(&self, severity: Level, message: &str) {
-		self.sink().unwrap().consume(LogObject::new(Some(self.id), severity, message))
+		self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(Some(self.id), severity, message))
 	}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple() {
+        let mut counter = 0;
+        let logger = SimpleLogger::new(|_log_object: LogObject| {
+            counter += 1;
+        });
+        std::thread::scope(|scope| {
+            for _ in 0..10 {
+                scope.spawn(|| {
+                    for _ in 0..100_000 {
+                        logger.debug("message");
+                    }
+                });
+            }
+        });
+        assert_eq!(counter, 10 * 100_000);
+    }
+
+    #[test]
+    fn test_channels() {
+        let mut counters = [0; 10];
+        let logger = SimpleLogger::new(|log_object: LogObject| {
+            let idx = match log_object.channel_id {
+                None => 0,
+                Some(id) => id,
+            };
+            counters[idx] += 1;
+        });
+        std::thread::scope(|scope| {
+            for i in 1..10 {
+                let channel = logger.channel(i);
+                scope.spawn(move || {
+                    for _ in 0..(i * 100_000) {
+                        channel.debug("message");
+                    }
+                });
+            }
+            for _ in 0..1_000_000 {
+                logger.debug("message");
+            }
+        });
+        assert_eq!(
+            counters,
+            [1_000_000, 100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000, 900_000],
+        );
+    }
 }
