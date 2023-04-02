@@ -13,6 +13,27 @@ pub const SET_COLOR_BRIGHT_WHITE   : &str = "\x1b[1;37m";
 pub const SET_COLOR_DEFAULT        : &str = "\x1b[39m";
 pub const RESET_COLOR              : &str = "\x1b[0m";
 
+#[derive(Clone, Copy, Debug, Hash)]
+pub struct Colored(pub Level);
+
+impl Colored {
+	pub const fn as_str(&self) -> &'static str {
+		match self.0 {
+			Level::DEBUG    => concatcp!(SET_COLOR_BRIGHT_CYAN   , Level::DEBUG.as_str()   , RESET_COLOR),
+			Level::INFO     => concatcp!(SET_COLOR_BRIGHT_BLUE   , Level::INFO.as_str()    , RESET_COLOR),
+			Level::WARNING  => concatcp!(SET_COLOR_BRIGHT_YELLOW , Level::WARNING.as_str() , RESET_COLOR),
+			Level::ERROR    => concatcp!(SET_COLOR_BRIGHT_RED    , Level::ERROR.as_str()   , RESET_COLOR),
+			Level::CRITICAL => concatcp!(SET_COLOR_BRIGHT_MAGENTA, Level::CRITICAL.as_str(), RESET_COLOR),
+		}
+	}
+}
+
+impl Display for Colored {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.write_str(self.as_str())
+	}
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub struct StderrWrite;
 
@@ -105,15 +126,9 @@ impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
 		};
 		let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
 		let _ = if self.colors {
-			let level = match log_object.severity {
-				Level::DEBUG    => concatcp!(SET_COLOR_BRIGHT_CYAN   , Level::DEBUG.as_str()),
-				Level::INFO     => concatcp!(SET_COLOR_BRIGHT_BLUE   , Level::INFO.as_str()),
-				Level::WARNING  => concatcp!(SET_COLOR_BRIGHT_YELLOW , Level::WARNING.as_str()),
-				Level::ERROR    => concatcp!(SET_COLOR_BRIGHT_RED    , Level::ERROR.as_str()),
-				Level::CRITICAL => concatcp!(SET_COLOR_BRIGHT_MAGENTA, Level::CRITICAL.as_str()),
-			};
+			let level = Colored(log_object.severity).as_str();
 			if self.log_thread_id {
-				writeln!(self.output, "[{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}{channel_name}{RESET_COLOR}]: {}", log_object.message)
+				writeln!(self.output, "[{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}][{SET_COLOR_BRIGHT_WHITE}{channel_name}{RESET_COLOR}]: {}", log_object.message)
 			} else {
 				writeln!(self.output, "[{SET_COLOR_BRIGHT_GREEN}{secs_since_epoch}{RESET_COLOR}][{level}{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}{channel_name}{RESET_COLOR}]: {}", log_object.message)
 			}
