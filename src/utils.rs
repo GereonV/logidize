@@ -38,9 +38,9 @@ impl ChannelMap for InvisibleChannelMap {
 }
 
 pub struct StdErrSink<M: ChannelMap = InvisibleChannelMap> {
-	channel_map: M,
-	min_severity: Level,
-	mute: bool,
+	pub channel_map: M,
+	pub min_severity: Level,
+	pub muted: bool,
 }
 
 impl<M: ChannelMap> StdErrSink<M> {
@@ -48,36 +48,8 @@ impl<M: ChannelMap> StdErrSink<M> {
 		Self {
 			channel_map,
 			min_severity: Level::DEBUG,
-			mute: false,
+			muted: false,
 		}
-	}
-
-	pub const fn channel_map(&self) -> &M {
-		&self.channel_map
-	}
-
-	pub fn channel_map_mut(&mut self) -> &mut M {
-		&mut self.channel_map
-	}
-
-	pub const fn min_severity(&self) -> Level {
-		self.min_severity
-	}
-
-	pub fn set_min_severity(&mut self, min_severity: Level) {
-		self.min_severity = min_severity;
-	}
-
-	pub const fn muted(&self) -> bool {
-		self.mute
-	}
-
-	pub fn mute(&mut self) {
-		self.mute = true;
-	}
-
-	pub fn unmute(&mut self) {
-		self.mute = false;
 	}
 }
 
@@ -89,7 +61,7 @@ impl<M: ChannelMap + Default> Default for StdErrSink<M> {
 
 impl<M: ChannelMap> Sink for StdErrSink<M> {
 	fn consume(&mut self, log_object: LogObject) {
-		if self.mute || log_object.severity < self.min_severity {
+		if self.muted || log_object.severity < self.min_severity {
 			return;
 		}
 		let Some(channel_name) = self.channel_map.map(log_object.channel_id) else {
