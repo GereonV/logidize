@@ -32,6 +32,7 @@ impl<T: FnMut(LogObject)> Sink for T {
 	}
 }
 
+#[derive(Default)]
 pub struct SimpleLogger<S: Sink> {
 	sink: Mutex<S>,
 }
@@ -42,18 +43,24 @@ impl<S: Sink + Clone> Clone for SimpleLogger<S> {
 	}
 }
 
-#[derive(Clone, Copy)]
 pub struct ChannelLogger<'a, S: Sink> {
 	id: usize,
 	sink: &'a Mutex<S>,
 }
 
+impl<S: Sink> Copy for ChannelLogger<'_, S> {}
+impl<S: Sink> Clone for ChannelLogger<'_, S> {
+	fn clone(&self) -> Self {
+		*self
+	}
+}
+
 impl<S: Sink> SimpleLogger<S> {
-	pub fn new(sink: S) -> Self {
+	pub const fn new(sink: S) -> Self {
 		Self { sink: Mutex::new(sink) }
 	}
 
-	pub fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
+	pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
 		ChannelLogger { id: channel_id, sink: &self.sink }
 	}
 
@@ -63,7 +70,7 @@ impl<S: Sink> SimpleLogger<S> {
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
-	pub fn id(&self) -> usize {
+	pub const fn id(&self) -> usize {
 		self.id
 	}
 

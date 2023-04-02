@@ -25,25 +25,31 @@ impl<T: FnMut(LogObject)> Sink for T {
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct SimpleLogger<S: Sink> {
 	sink: S,
 	_unsync: PhantomData<Cell<()>>,
 }
 
-#[derive(Clone, Copy)]
 pub struct ChannelLogger<'a, S: Sink> {
 	channel_id: usize,
 	sink: &'a S,
 	_unsendsync: PhantomData<*const ()>,
 }
 
+impl<S: Sink> Copy for ChannelLogger<'_, S> {}
+impl<S: Sink> Clone for ChannelLogger<'_, S> {
+	fn clone(&self) -> Self {
+		*self
+	}
+}
+
 impl<S: Sink> SimpleLogger<S> {
-	pub fn new(sink: S) -> Self {
+	pub const fn new(sink: S) -> Self {
 		Self { sink, _unsync: PhantomData }
 	}
 
-	pub fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
+	pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
 		ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
 	}
 
@@ -55,7 +61,7 @@ impl<S: Sink> SimpleLogger<S> {
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
-	pub fn id(&self) -> usize {
+	pub const fn id(&self) -> usize {
 		self.channel_id
 	}
 
