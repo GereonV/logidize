@@ -42,42 +42,42 @@ pub trait Logger {
 
 #[macro_export]
 macro_rules! log {
-    ($logger:expr, $lvl:expr, $($args:tt),+) => {
+    ($logger:expr, $lvl:expr, $($args:tt),+$(,)?) => {
         $logger.log($lvl, format_args!($($args),+))
     };
 }
 
 #[macro_export]
 macro_rules! debug {
-    ($logger:expr, $($args:tt),+) => {
+    ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.debug(format_args!($($args),+))
     };
 }
 
 #[macro_export]
 macro_rules! info {
-    ($logger:expr, $($args:tt),+) => {
+    ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.info(format_args!($($args),+))
     };
 }
 
 #[macro_export]
 macro_rules! warning {
-    ($logger:expr, $($args:tt),+) => {
+    ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.warning(format_args!($($args),+))
     };
 }
 
 #[macro_export]
 macro_rules! error {
-    ($logger:expr, $($args:tt),+) => {
+    ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.error(format_args!($($args),+))
     };
 }
 
 #[macro_export]
 macro_rules! critical {
-    ($logger:expr, $($args:tt),+) => {
+    ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.critical(format_args!($($args),+))
     };
 }
