@@ -37,6 +37,7 @@ fn main() {
             Some(CHANNELS[id])
         }
     }));
+    logger.sink().log_thread_id = true;
     debug!(logger, "main");
     debug!(logger.channel(1), "filtered");
     info!(logger.channel(1), "rendering");
