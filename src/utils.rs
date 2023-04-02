@@ -39,6 +39,7 @@ impl ChannelMap for InvisibleChannelMap {
 
 pub struct StdErrSink<M: ChannelMap = InvisibleChannelMap> {
 	pub channel_map: M,
+	pub log_thread_id: bool,
 	pub min_severity: Level,
 	pub muted: bool,
 }
@@ -47,6 +48,7 @@ impl<M: ChannelMap> StdErrSink<M> {
 	pub const fn new(channel_map: M) -> Self {
 		Self {
 			channel_map,
+			log_thread_id: false,
 			min_severity: Level::DEBUG,
 			muted: false,
 		}
@@ -78,6 +80,11 @@ impl<M: ChannelMap> Sink for StdErrSink<M> {
 			Ok(duration) => duration.as_secs() as i64,
 			Err(e) => -(e.duration().as_secs() as i64),
 		};
-		let _ = writeln!(std::io::stderr(), "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message);
+		let _ = if self.log_thread_id {
+			let id: u64 = unsafe { std::mem::transmute(log_object.thread_id) };
+			writeln!(std::io::stderr(), "[{id}][{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+		} else {
+			writeln!(std::io::stderr(), "[{secs_since_epoch}][{level}][{channel_name}]: {}", log_object.message)
+		};
 	}
 }
