@@ -1,28 +1,28 @@
-use logidize::{*, single_threaded::*, utils::*};
+use logidize::{*, utils::*};
 
 fn main() {
-    let logger: SimpleLogger<StdErrSink> = Default::default();
-    logger.debug("debug");
-    logger.info("info");
-    logger.warning("warning");
-    logger.error("error");
-    logger.critical("critical");
-    logger.channel(1).debug("from channel 1");
-    logger.channel(2).debug("from channel 2");
+    let logger: single_threaded::SimpleLogger<StdErrSink> = Default::default();
+    debug!(logger, "debug");
+    info!(logger, "info");
+    warning!(logger, "warning");
+    error!(logger, "error");
+    critical!(logger, "critical");
+    debug!(logger.channel(1), "from channel {}", 1);
+    debug!(logger.channel(2), "from channel {}", 2);
 
     logger.sink().muted = true;
-    logger.debug("muted");
+    debug!(logger, "muted");
     logger.sink().muted = false;
-    logger.debug("unmuted");
+    debug!(logger, "unmuted");
 
     logger.sink().min_severity = Level::ERROR;
-    logger.debug("filtered");
-    logger.info("filtered");
-    logger.warning("filtered");
-    logger.error("unfiltered 1");
-    logger.critical("unfiltered 2");
+    debug!(logger, "filtered");
+    info!(logger, "filtered");
+    warning!(logger, "filtered");
+    error!(logger, "unfiltered 1");
+    critical!(logger, "unfiltered 2");
 
-    let logger = SimpleLogger::new(StdErrSink::new(|log_object: &LogObject| {
+    let logger = single_threaded::SimpleLogger::new(StdErrSink::new(|log_object: &LogObject| {
         const CHANNELS: [&'static str; 4] = [
             "Main-Channel",
             "Rendering-Channel",
@@ -36,14 +36,14 @@ fn main() {
             Some(CHANNELS[id])
         }
     }));
-    logger.debug("main");
-    logger.channel(1).debug("filtered");
-    logger.channel(1).info("rendering");
-    logger.channel(2).debug("filtered");
-    logger.channel(2).info("filtered");
-    logger.channel(2).warning("physics");
-    logger.channel(3).debug("filtered");
-    logger.channel(3).info("filtered");
-    logger.channel(3).warning("filtered");
-    logger.channel(3).error("extra");
+    debug!(logger, "main");
+    debug!(logger.channel(1), "filtered");
+    info!(logger.channel(1), "rendering");
+    debug!(logger.channel(2), "filtered");
+    info!(logger.channel(2), "filtered");
+    warning!(logger.channel(2), "physics");
+    debug!(logger.channel(3), "filtered");
+    info!(logger.channel(3), "filtered");
+    warning!(logger.channel(3), "filtered");
+    error!(logger.channel(3), "extra");
 }

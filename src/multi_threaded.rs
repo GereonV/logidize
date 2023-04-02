@@ -49,13 +49,13 @@ impl<S: Sink> ChannelLogger<'_, S> {
 }
 
 impl<S: Sink> Logger for SimpleLogger<S> {
-	fn log(&self, severity: Level, message: &str) {
+	fn log(&self, severity: Level, message: Arguments) {
 		self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(0, severity, message))
 	}
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
-	fn log(&self, severity: Level, message: &str) {
+	fn log(&self, severity: Level, message: Arguments) {
 		self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(self.id, severity, message))
 	}
 }
@@ -74,7 +74,7 @@ mod tests {
             for _ in 0..10 {
                 scope.spawn(|| {
                     for _ in 0..100_000 {
-                        logger.debug("message");
+						debug!(logger, "message");
                     }
                 });
             }
@@ -93,12 +93,12 @@ mod tests {
                 let channel = logger.channel(i);
                 scope.spawn(move || {
                     for _ in 0..(i * 100_000) {
-                        channel.debug("message");
+						debug!(channel, "message");
                     }
                 });
             }
             for _ in 0..1_000_000 {
-                logger.debug("message");
+				debug!(logger, "message");
             }
         });
         assert_eq!(
