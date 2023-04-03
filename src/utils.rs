@@ -35,9 +35,9 @@ impl Display for Colored {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct StderrWrite;
+pub struct StderrWriter;
 
-impl Write for StderrWrite {
+impl Write for StderrWriter {
 	fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
 		std::io::stderr().write(buf)
 	}
@@ -48,9 +48,9 @@ impl Write for StderrWrite {
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct StdoutWrite;
+pub struct StdoutWriter;
 
-impl Write for StdoutWrite {
+impl Write for StdoutWriter {
 	fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
 		std::io::stdout().write(buf)
 	}
@@ -84,7 +84,7 @@ impl ChannelFilterMap for InvisibleChannelFilterMap {
 	}
 }
 
-pub struct WriteSink<W: Write = StderrWrite, M: ChannelFilterMap = InvisibleChannelFilterMap> {
+pub struct WriteSink<W: Write = StderrWriter, M: ChannelFilterMap = InvisibleChannelFilterMap> {
 	pub channel_map: M,
 	pub colors: bool,
 	pub log_thread_id: bool,
