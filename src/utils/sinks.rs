@@ -59,3 +59,24 @@ impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
         };
     }
 }
+
+#[derive(Clone, Copy, Debug, Default, Hash)]
+pub struct MultiSink<T1: Sink, T2: Sink>(pub T1, pub T2);
+
+impl<T1: Sink, T2: Sink> Sink for MultiSink<T1, T2> {
+    fn consume(&mut self, log_object: LogObject) {
+        self.0.consume(log_object);
+        self.1.consume(log_object);
+    }
+}
+
+#[macro_export]
+macro_rules! multi_sink {
+    ($head:expr, $tail:expr $(,)?) => {
+        MultiSink($head, $tail)
+    };
+
+    ($head:expr, $($tail:expr),+ $(,)?) => {
+        MultiSink($head, multi_sink!($($tail),+))
+    };
+}

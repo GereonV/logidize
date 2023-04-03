@@ -27,13 +27,7 @@ impl Write for StdoutWriter {
 }
 
 #[derive(Clone, Copy, Debug, Default, Hash)]
-pub struct MultiWriter<T1: Write, T2: Write>(T1, T2);
-
-impl<T1: Write, T2: Write> MultiWriter<T1, T2> {
-    pub const fn new(t1: T1, t2: T2) -> Self {
-        Self(t1, t2)
-    }
-}
+pub struct MultiWriter<T1: Write, T2: Write>(pub T1, pub T2);
 
 impl<T1: Write, T2: Write> Write for MultiWriter<T1, T2> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
@@ -48,10 +42,10 @@ impl<T1: Write, T2: Write> Write for MultiWriter<T1, T2> {
 #[macro_export]
 macro_rules! multi_writer {
     ($head:expr, $tail:expr $(,)?) => {
-        MultiWriter::new($head, $tail)
+        MultiWriter($head, $tail)
     };
 
     ($head:expr, $($tail:expr),+ $(,)?) => {
-        MultiWriter::new($head, multi_writer!($($tail),+))
+        MultiWriter($head, multi_writer!($($tail),+))
     };
 }
