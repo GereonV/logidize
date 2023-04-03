@@ -48,4 +48,7 @@ fn main() {
     info!(logger.channel(3), "filtered");
     warning!(logger.channel(3), "filtered");
     error!(logger.channel(3), "extra");
+
+    let logger = SimpleLogger::new(WriteSink::new(multi_writer!(StderrWriter, StdoutWriter), InvisibleChannelFilterMap));
+    debug!(logger, "double");
 }
