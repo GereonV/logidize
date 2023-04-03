@@ -1,7 +1,5 @@
 use std::{thread::{self, ThreadId}, time::SystemTime, fmt::{Display,  Arguments}};
 
-use utils::{WriteSink, StderrWriter, SimpleChannelFilterMap};
-
 pub mod single_threaded;
 pub mod multi_threaded;
 pub mod utils;
@@ -42,15 +40,10 @@ pub trait Logger {
     fn critical(&self, message: Arguments) { self.log(Level::CRITICAL, message); }
 }
 
-// Default::default() is not const
-pub static GLOBAL_LOGGER: multi_threaded::SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilterMap<String>>> = multi_threaded::SimpleLogger::new(
-    WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
-);
-
 #[macro_export]
 macro_rules! log {
     ($lvl:expr, $fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        log!(GLOBAL_LOGGER, $lvl, $fmt, $($($($args),+)?)?)
+        log!($crate::utils::GLOBAL_LOGGER, $lvl, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $lvl:expr, $($args:tt),+$(,)?) => {
@@ -61,7 +54,7 @@ macro_rules! log {
 #[macro_export]
 macro_rules! debug {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        debug!(GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        debug!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -72,7 +65,7 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! info {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        info!(GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        info!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -83,7 +76,7 @@ macro_rules! info {
 #[macro_export]
 macro_rules! warning {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        warning!(GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        warning!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -94,7 +87,7 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! error {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        error!(GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        error!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -105,7 +98,7 @@ macro_rules! error {
 #[macro_export]
 macro_rules! critical {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        critical!(GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        critical!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -123,23 +116,23 @@ pub struct LogObject<'a> {
 }
 
 impl LogObject<'_> {
-	fn new<'a>(channel_id: usize, severity: Level, message: Arguments<'a>) -> LogObject<'a> {
-		LogObject {
-			channel_id,
-			message,
-			severity,
-			thread_id: thread::current().id(),
-			time: SystemTime::now(),
-		}
-	}
+    fn new<'a>(channel_id: usize, severity: Level, message: Arguments<'a>) -> LogObject<'a> {
+        LogObject {
+            channel_id,
+            message,
+            severity,
+            thread_id: thread::current().id(),
+            time: SystemTime::now(),
+        }
+    }
 }
 
 pub trait Sink {
-	fn consume(&mut self, log_object: LogObject);
+    fn consume(&mut self, log_object: LogObject);
 }
 
 impl<T: FnMut(LogObject)> Sink for T {
-	fn consume(&mut self, log_object: LogObject) {
-		self(log_object);
-	}
+    fn consume(&mut self, log_object: LogObject) {
+        self(log_object);
+    }
 }

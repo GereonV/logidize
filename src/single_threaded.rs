@@ -3,62 +3,62 @@ use super::*;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
-	sink: S,
-	_unsync: PhantomData<Cell<()>>,
+    sink: S,
+    _unsync: PhantomData<Cell<()>>,
 }
 
 #[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
-	channel_id: usize,
-	sink: &'a S,
-	_unsendsync: PhantomData<*const ()>,
+    channel_id: usize,
+    sink: &'a S,
+    _unsendsync: PhantomData<*const ()>,
 }
 
 impl<S: Sink> Copy for ChannelLogger<'_, S> {}
 impl<S: Sink> Clone for ChannelLogger<'_, S> {
-	fn clone(&self) -> Self {
-		*self
-	}
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<S: Sink> SimpleLogger<S> {
-	pub const fn new(sink: S) -> Self {
-		Self { sink, _unsync: PhantomData }
-	}
+    pub const fn new(sink: S) -> Self {
+        Self { sink, _unsync: PhantomData }
+    }
 
-	pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
-		ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
-	}
+    pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
+        ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
+    }
 
-	pub fn sink(&self) -> &mut S {
-		let ptr: *const S = &self.sink;
-		let ptr = ptr as *mut S;
-		unsafe { &mut *ptr }
-	}
+    pub fn sink(&self) -> &mut S {
+        let ptr: *const S = &self.sink;
+        let ptr = ptr as *mut S;
+        unsafe { &mut *ptr }
+    }
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
-	pub const fn id(&self) -> usize {
-		self.channel_id
-	}
+    pub const fn id(&self) -> usize {
+        self.channel_id
+    }
 
-	pub fn sink(&self) -> &mut S {
-		let ptr: *const S = self.sink;
-		let ptr = ptr as *mut S;
-		unsafe { &mut *ptr }
-	}
+    pub fn sink(&self) -> &mut S {
+        let ptr: *const S = self.sink;
+        let ptr = ptr as *mut S;
+        unsafe { &mut *ptr }
+    }
 }
 
 impl<S: Sink> Logger for SimpleLogger<S> {
-	fn log(&self, severity: Level, message: Arguments) {
-		self.sink().consume(LogObject::new(0, severity, message))
-	}
+    fn log(&self, severity: Level, message: Arguments) {
+        self.sink().consume(LogObject::new(0, severity, message))
+    }
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
-	fn log(&self, severity: Level, message: Arguments) {
-		self.sink().consume(LogObject::new(self.channel_id, severity, message))
-	}
+    fn log(&self, severity: Level, message: Arguments) {
+        self.sink().consume(LogObject::new(self.channel_id, severity, message))
+    }
 }
 
 #[cfg(test)]
@@ -77,8 +77,8 @@ mod tests {
             assert_eq!(log_object.severity, Level::DEBUG);
             assert_eq!(log_object.message.as_str(), Some("message"));
         });
-		debug!(logger, "message");
-		log!(logger, Level::DEBUG, "message");
+        debug!(logger, "message");
+        log!(logger, Level::DEBUG, "message");
     }
 
     #[test]
@@ -90,7 +90,7 @@ mod tests {
         });
         for i in 0..10 {
             let channel = logger.channel(i);
-			debug!(channel, "message");
+            debug!(channel, "message");
         }
     }
 }

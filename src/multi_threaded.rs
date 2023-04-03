@@ -3,62 +3,62 @@ use super::*;
 
 #[derive(Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
-	sink: Mutex<S>,
+    sink: Mutex<S>,
 }
 
 impl<S: Sink + Clone> Clone for SimpleLogger<S> {
-	fn clone(&self) -> Self {
-		Self { sink: Mutex::new(self.sink.lock().expect("SimpleLogger::clone() failed because the logger was poisoned").clone()) }
-	}
+    fn clone(&self) -> Self {
+        Self { sink: Mutex::new(self.sink.lock().expect("SimpleLogger::clone() failed because the logger was poisoned").clone()) }
+    }
 }
 
 #[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
-	id: usize,
-	sink: &'a Mutex<S>,
+    id: usize,
+    sink: &'a Mutex<S>,
 }
 
 impl<S: Sink> Copy for ChannelLogger<'_, S> {}
 impl<S: Sink> Clone for ChannelLogger<'_, S> {
-	fn clone(&self) -> Self {
-		*self
-	}
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<S: Sink> SimpleLogger<S> {
-	pub const fn new(sink: S) -> Self {
-		Self { sink: Mutex::new(sink) }
-	}
+    pub const fn new(sink: S) -> Self {
+        Self { sink: Mutex::new(sink) }
+    }
 
-	pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
-		ChannelLogger { id: channel_id, sink: &self.sink }
-	}
+    pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
+        ChannelLogger { id: channel_id, sink: &self.sink }
+    }
 
-	pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
-		self.sink.lock()
-	}
+    pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
+        self.sink.lock()
+    }
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
-	pub const fn id(&self) -> usize {
-		self.id
-	}
+    pub const fn id(&self) -> usize {
+        self.id
+    }
 
-	pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
-		self.sink.lock()
-	}
+    pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
+        self.sink.lock()
+    }
 }
 
 impl<S: Sink> Logger for SimpleLogger<S> {
-	fn log(&self, severity: Level, message: Arguments) {
-		self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(0, severity, message))
-	}
+    fn log(&self, severity: Level, message: Arguments) {
+        self.sink().expect("SimpleLogger::log() failed because the logger was poisoned").consume(LogObject::new(0, severity, message))
+    }
 }
 
 impl<S: Sink> Logger for ChannelLogger<'_, S> {
-	fn log(&self, severity: Level, message: Arguments) {
-		self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(self.id, severity, message))
-	}
+    fn log(&self, severity: Level, message: Arguments) {
+        self.sink().expect("ChannelLogger::log() failed because the underlying logger was poisoned").consume(LogObject::new(self.id, severity, message))
+    }
 }
 
 #[cfg(test)]
@@ -75,7 +75,7 @@ mod tests {
             for _ in 0..10 {
                 scope.spawn(|| {
                     for _ in 0..100_000 {
-						debug!(logger, "message");
+                        debug!(logger, "message");
                     }
                 });
             }
@@ -94,12 +94,12 @@ mod tests {
                 let channel = logger.channel(i);
                 scope.spawn(move || {
                     for _ in 0..(i * 100_000) {
-						debug!(channel, "message");
+                        debug!(channel, "message");
                     }
                 });
             }
             for _ in 0..1_000_000 {
-				debug!(logger, "message");
+                debug!(logger, "message");
             }
         });
         assert_eq!(
