@@ -1,6 +1,6 @@
 use std::{thread::{self, ThreadId}, time::SystemTime, fmt::{Display,  Arguments}};
 
-use utils::{WriteSink, StderrWriter, InvisibleChannelFilterMap};
+use utils::{WriteSink, StderrWriter, SimpleChannelFilterMap};
 
 pub mod single_threaded;
 pub mod multi_threaded;
@@ -43,8 +43,8 @@ pub trait Logger {
 }
 
 // Default::default() is not const
-pub const GLOBAL_LOGGER: multi_threaded::SimpleLogger<WriteSink> = multi_threaded::SimpleLogger::new(
-    WriteSink::new(StderrWriter, InvisibleChannelFilterMap)
+pub static GLOBAL_LOGGER: multi_threaded::SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilterMap<String>>> = multi_threaded::SimpleLogger::new(
+    WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
 );
 
 #[macro_export]

@@ -2,6 +2,8 @@ use const_format::concatcp;
 use logidize::{*, single_threaded::*, utils::*};
 
 fn main() {
+    debug!("disabled channel");
+    GLOBAL_LOGGER.sink().unwrap().channel_map.set_channel(0, "Main-Channel", true);
     debug!("debug");
     info!("info");
     warning!("warning");
