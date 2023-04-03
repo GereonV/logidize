@@ -80,3 +80,65 @@ macro_rules! multi_sink {
         MultiSink($head, multi_sink!($($tail),+))
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{fmt::Write, mem::MaybeUninit, time::{SystemTime, UNIX_EPOCH}};
+
+    use crate::{single_threaded::SimpleLogger, Level, Logger, log, debug, info, warning, error, critical};
+
+    use super::WriteSink;
+
+    fn log_to_string(f: impl FnOnce(&SimpleLogger<WriteSink<Vec<u8>>>)) -> String {
+        let logger = Default::default();
+        f(&logger);
+        String::from_utf8(logger.into_sink().output).unwrap()
+    }
+
+    #[test]
+    fn test_colorless_idless() {
+        let mut time = MaybeUninit::uninit();
+        let output = log_to_string(|logger| {
+            logger.sink().output.reserve(1 << 10);
+            logger.sink().colors = false;
+            logger.sink().log_thread_id = false;
+            loop {
+                let start_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                debug!(logger, "debug");
+                info!(logger, "info");
+                warning!(logger, "warning");
+                error!(logger, "error");
+                critical!(logger, "critical");
+                for i in 1..=10 {
+                    log!(logger.channel(i), Level::DEBUG, "from channel {i}")
+                }
+                let end_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                if start_time == end_time {
+                    time = MaybeUninit::new(start_time);
+                    break;
+                }
+                logger.sink().output.clear();
+            }
+        });
+        let time = unsafe { time.assume_init() };
+        let mut expected_output = String::new();
+        let _ = write!(&mut expected_output,
+            "[{time}][DEBUG][0]: debug\n\
+             [{time}][INFO][0]: info\n\
+             [{time}][WARNING][0]: warning\n\
+             [{time}][ERROR][0]: error\n\
+             [{time}][CRITICAL][0]: critical\n\
+             [{time}][DEBUG][1]: from channel 1\n\
+             [{time}][DEBUG][2]: from channel 2\n\
+             [{time}][DEBUG][3]: from channel 3\n\
+             [{time}][DEBUG][4]: from channel 4\n\
+             [{time}][DEBUG][5]: from channel 5\n\
+             [{time}][DEBUG][6]: from channel 6\n\
+             [{time}][DEBUG][7]: from channel 7\n\
+             [{time}][DEBUG][8]: from channel 8\n\
+             [{time}][DEBUG][9]: from channel 9\n\
+             [{time}][DEBUG][10]: from channel 10\n"
+        );
+        assert_eq!(output, expected_output);
+    }
+}
