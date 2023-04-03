@@ -30,10 +30,15 @@ impl<S: Sink> SimpleLogger<S> {
         ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
     }
 
+    // can't be called simultaneously due to thread-limitations
     pub fn sink(&self) -> &mut S {
         let ptr: *const S = &self.sink;
         let ptr = ptr as *mut S;
         unsafe { &mut *ptr }
+    }
+
+    pub fn into_sink(self) -> S {
+        self.sink
     }
 }
 

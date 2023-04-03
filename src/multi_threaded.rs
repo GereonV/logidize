@@ -37,6 +37,10 @@ impl<S: Sink> SimpleLogger<S> {
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
         self.sink.lock()
     }
+
+    pub fn into_sink(self) -> LockResult<S> {
+        self.sink.into_inner()
+    }
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
