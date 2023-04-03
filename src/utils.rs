@@ -13,7 +13,7 @@ pub const SET_COLOR_BRIGHT_WHITE   : &str = "\x1b[1;37m";
 pub const SET_COLOR_DEFAULT        : &str = "\x1b[39m";
 pub const RESET_COLOR              : &str = "\x1b[0m";
 
-#[derive(Clone, Copy, Debug, Hash)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Colored(pub Level);
 
 impl Colored {
