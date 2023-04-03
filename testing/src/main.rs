@@ -2,6 +2,12 @@ use const_format::concatcp;
 use logidize::{*, single_threaded::*, utils::*};
 
 fn main() {
+    debug!("debug");
+    info!("info");
+    warning!("warning");
+    error!("error");
+    critical!("critical");
+
     let logger: SimpleLogger<WriteSink> = Default::default();
     debug!(logger, "debug");
     info!(logger, "info");
