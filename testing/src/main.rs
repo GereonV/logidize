@@ -23,7 +23,7 @@ fn main() {
     error!(logger, "unfiltered 1");
     critical!(logger, "unfiltered 2");
 
-    let logger = SimpleLogger::new(WriteSink::new(StderrWrite::default(), |log_object: &LogObject| {
+    let logger = SimpleLogger::new(WriteSink::new(StderrWriter::default(), |log_object: &LogObject| {
         const CHANNELS: [&'static str; 4] = [
             concatcp!(SET_COLOR_BRIGHT_WHITE, "Main-Channel",      RESET_COLOR),
             concatcp!(SET_COLOR_BRIGHT_WHITE, "Rendering-Channel", RESET_COLOR),
