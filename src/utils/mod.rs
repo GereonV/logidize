@@ -13,6 +13,13 @@ pub static GLOBAL_LOGGER: SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilt
     WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
 );
 
+#[macro_export]
+macro_rules! global_logger {
+    () => {
+        $crate::utils::GLOBAL_LOGGER
+    };
+}
+
 // #[cfg(test)]
 // mod tests {
 // 	use crate::single_threaded::SimpleLogger;

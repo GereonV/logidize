@@ -43,7 +43,7 @@ pub trait Logger {
 #[macro_export]
 macro_rules! log {
     ($lvl:expr, $fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        log!($crate::utils::GLOBAL_LOGGER, $lvl, $fmt, $($($($args),+)?)?)
+        log!(global_logger!(), $lvl, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $lvl:expr, $($args:tt),+$(,)?) => {
@@ -54,7 +54,7 @@ macro_rules! log {
 #[macro_export]
 macro_rules! debug {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        debug!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        debug!(global_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -65,7 +65,7 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! info {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        info!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        info!(global_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -76,7 +76,7 @@ macro_rules! info {
 #[macro_export]
 macro_rules! warning {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        warning!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        warning!(global_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -87,7 +87,7 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! error {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        error!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        error!(global_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -98,7 +98,7 @@ macro_rules! error {
 #[macro_export]
 macro_rules! critical {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        critical!($crate::utils::GLOBAL_LOGGER, $fmt, $($($($args),+)?)?)
+        critical!(global_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
