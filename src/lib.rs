@@ -33,10 +33,10 @@ impl Display for Level {
 
 pub trait Logger {
     fn log(&self, severity: Level, message: Arguments);
-    fn debug(&self, message: Arguments) { self.log(Level::DEBUG, message); }
-    fn info(&self, message: Arguments) { self.log(Level::INFO, message); }
-    fn warning(&self, message: Arguments) { self.log(Level::WARNING, message); }
-    fn error(&self, message: Arguments) { self.log(Level::ERROR, message); }
+    fn    debug(&self, message: Arguments) { self.log(Level::DEBUG,    message); }
+    fn     info(&self, message: Arguments) { self.log(Level::INFO,     message); }
+    fn  warning(&self, message: Arguments) { self.log(Level::WARNING,  message); }
+    fn    error(&self, message: Arguments) { self.log(Level::ERROR,    message); }
     fn critical(&self, message: Arguments) { self.log(Level::CRITICAL, message); }
 }
 
