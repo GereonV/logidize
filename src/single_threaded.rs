@@ -80,6 +80,7 @@ mod tests {
             assert!(log_object.time <= SystemTime::now());
             assert_eq!(log_object.channel_id, 0);
             assert_eq!(log_object.severity, Level::DEBUG);
+            assert_eq!(log_object.thread_id, thread::current().id());
             assert_eq!(log_object.message.as_str(), Some("message"));
         });
         debug!(logger, "message");
@@ -89,8 +90,14 @@ mod tests {
     #[test]
     fn test_channels() {
         let mut counter = 0;
+        let start_time = SystemTime::now();
         let logger = SimpleLogger::new(|log_object: LogObject| {
+            assert!(log_object.time >= start_time);
+            assert!(log_object.time <= SystemTime::now());
             assert_eq!(log_object.channel_id, counter);
+            assert_eq!(log_object.severity, Level::DEBUG);
+            assert_eq!(log_object.thread_id, thread::current().id());
+            assert_eq!(log_object.message.as_str(), Some("message"));
             counter += 1;
         });
         for i in 0..10 {

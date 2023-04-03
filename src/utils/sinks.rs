@@ -83,9 +83,9 @@ macro_rules! multi_sink {
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Write, mem::MaybeUninit, time::{SystemTime, UNIX_EPOCH}};
+    use std::{fmt::Write, mem::MaybeUninit, time::{SystemTime, UNIX_EPOCH}, thread};
 
-    use crate::{single_threaded::SimpleLogger, Level, Logger, log, debug, info, warning, error, critical};
+    use crate::{single_threaded::SimpleLogger, Level, Logger, log, debug, info, warning, error, critical, utils::colors::*};
 
     use super::WriteSink;
 
@@ -95,13 +95,11 @@ mod tests {
         String::from_utf8(logger.into_sink().output).unwrap()
     }
 
-    #[test]
-    fn test_colorless_idless() {
+    fn test_log(setup: impl FnOnce(&SimpleLogger<WriteSink<Vec<u8>>>)) -> (u64, String) {
         let mut time = MaybeUninit::uninit();
         let output = log_to_string(|logger| {
+            setup(logger);
             logger.sink().output.reserve(1 << 10);
-            logger.sink().colors = false;
-            logger.sink().log_thread_id = false;
             loop {
                 let start_time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                 debug!(logger, "debug");
@@ -118,9 +116,18 @@ mod tests {
                     break;
                 }
                 logger.sink().output.clear();
-            }
+            };
         });
         let time = unsafe { time.assume_init() };
+        (time, output)
+    }
+
+    #[test]
+    fn test_colorless_idless() {
+        let (time, output) = test_log(|logger| {
+            logger.sink().colors = false;
+            logger.sink().log_thread_id = false;
+        });
         let mut expected_output = String::new();
         let _ = write!(&mut expected_output,
             "[{time}][DEBUG][0]: debug\n\
@@ -138,6 +145,34 @@ mod tests {
              [{time}][DEBUG][8]: from channel 8\n\
              [{time}][DEBUG][9]: from channel 9\n\
              [{time}][DEBUG][10]: from channel 10\n"
+        );
+        assert_eq!(output, expected_output);
+    }
+
+	#[test]
+    fn test_colored_ided() {
+        let (time, output) = test_log(|logger| {
+            logger.sink().colors = true;
+            logger.sink().log_thread_id = true;
+        });
+        let mut expected_output = String::new();
+        let id: u64 = unsafe { std::mem::transmute(thread::current().id()) };
+        let _ = write!(&mut expected_output,
+            "[{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: debug\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_BLUE}INFO{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: info\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_YELLOW}WARNING{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: warning\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_RED}ERROR{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: error\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_MAGENTA}CRITICAL{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: critical\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}1{RESET_COLOR}]: from channel 1\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}2{RESET_COLOR}]: from channel 2\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}3{RESET_COLOR}]: from channel 3\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}4{RESET_COLOR}]: from channel 4\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}5{RESET_COLOR}]: from channel 5\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}6{RESET_COLOR}]: from channel 6\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}7{RESET_COLOR}]: from channel 7\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}8{RESET_COLOR}]: from channel 8\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}9{RESET_COLOR}]: from channel 9\n\
+             [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}10{RESET_COLOR}]: from channel 10\n"
         );
         assert_eq!(output, expected_output);
     }
