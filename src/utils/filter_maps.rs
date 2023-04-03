@@ -26,6 +26,30 @@ impl ChannelFilterMap for InvisibleChannelFilterMap {
     }
 }
 
+#[derive(Clone, Copy, Debug, Hash)]
+pub struct StaticChannelFilterMap<T: 'static + Display, const N: usize>(pub &'static [T; N]);
+impl<T: 'static + Display, const N: usize> ChannelFilterMap for StaticChannelFilterMap<T, N> {
+    type DisplayType = &'static T;
+
+    fn filter_map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
+        self.0.get(log_object.channel_id)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Hash)]
+pub struct StaticSeverityChannelFilterMap<T: 'static + Display, const N: usize>(pub &'static [(T, Level); N]);
+impl<T: 'static + Display, const N: usize> ChannelFilterMap for StaticSeverityChannelFilterMap<T, N> {
+    type DisplayType = &'static T;
+
+    fn filter_map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
+        self.0.get(log_object.channel_id)
+            .and_then(|(t, min_severity)| match &log_object.severity < min_severity {
+                true => None,
+                false => Some(t),
+            })
+    }
+}
+
 // unsafe because it may outlive borrowed data
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BorrowDisplay<T: Display>(NonNull<T>);
