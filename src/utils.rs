@@ -1,4 +1,4 @@
-use std::{io::Write, time::UNIX_EPOCH};
+use std::{io::Write, time::UNIX_EPOCH, collections::{BTreeMap, btree_map::Entry}, ptr::NonNull};
 use const_format::concatcp;
 
 use super::*;
@@ -104,7 +104,7 @@ impl<T: FnMut(&LogObject) -> Option<DisplayType>, DisplayType: Display> ChannelF
 	}
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct InvisibleChannelFilterMap;
 impl ChannelFilterMap for InvisibleChannelFilterMap {
 	type DisplayType = usize;
@@ -114,6 +114,98 @@ impl ChannelFilterMap for InvisibleChannelFilterMap {
 	}
 }
 
+// unsafe because it may outlive borrowed data
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BorrowDisplay<T: Display>(NonNull<T>);
+
+impl<T: Display> Display for BorrowDisplay<T> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let t = unsafe { self.0.as_ref() };
+		t.fmt(f)
+	}
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct SimpleChannelFilterMap<T: Display> {
+	channels: BTreeMap<usize, (T, bool)>, // (name, enabled)
+}
+
+impl<T: Display> SimpleChannelFilterMap<T> {
+	pub const fn new() -> Self {
+		Self { channels: BTreeMap::new() }
+	}
+
+	pub fn channel(&self, channel_id: usize) -> Option<&(T, bool)> {
+		self.channels.get(&channel_id)
+	}
+
+	pub fn channel_mut(&mut self, channel_id: usize) -> Option<&mut (T, bool)> {
+		self.channels.get_mut(&channel_id)
+	}
+
+	pub fn set_channel(&mut self, channel_id: usize, channel_name: impl Into<T>, enabled: bool) -> Option<(T, bool)> {
+		self.channels.insert(channel_id, (channel_name.into(), enabled))
+	}
+
+	pub fn insert_channel(&mut self, channel_id: usize, channel_name: impl Into<T>, enabled: bool) -> (bool, &mut (T, bool)) {
+		self.insert_channel_with_id(channel_id, |_| (channel_name.into(), enabled))
+	}
+
+	pub fn insert_channel_with(&mut self, channel_id: usize, f: impl FnOnce() -> (T, bool)) -> (bool, &mut (T, bool)) {
+		self.insert_channel_with_id(channel_id, |_| f())
+	}
+
+	pub fn insert_channel_with_id(&mut self, channel_id: usize, f: impl FnOnce(usize) -> (T, bool)) -> (bool, &mut (T, bool)) {
+		match self.channels.entry(channel_id) {
+			Entry::Occupied(e) => (false, e.into_mut()),
+			Entry::Vacant(e) => (true, e.insert(f(channel_id))),
+		}
+	}
+
+	pub fn channel_name(&self, channel_id: usize) -> Option<&T> {
+		let (name, _) = self.channels.get(&channel_id)?;
+		Some(name)
+	}
+
+	pub fn set_channel_name(&mut self, channel_id: usize, channel_name: impl Into<T>) {
+		match self.channels.get_mut(&channel_id) {
+			Some(channel) => channel.0 = channel_name.into(),
+			None => panic!("called SimpleChannelFilterMap::set_channel_name() with unknown channel"),
+		}
+	}
+
+	pub fn channel_enabled(&self, channel_id: usize) -> bool {
+		match self.channels.get(&channel_id) {
+			Some((_, true)) => true,
+			_ => false,
+		}
+	}
+
+	pub fn set_channel_enabled(&mut self, channel_id: usize, enabled: bool) {
+		match self.channels.get_mut(&channel_id) {
+			Some(channel) => channel.1 = enabled,
+			None => panic!("called SimpleChannelFilterMap::set_channel_enabled() with unknown channel"),
+		}
+	}
+}
+
+impl<T: Display> ChannelFilterMap for SimpleChannelFilterMap<T> {
+	type DisplayType = BorrowDisplay<T>;
+
+	fn filter_map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType> {
+		let (name, enabled) = self.channels.get(&log_object.channel_id)?;
+		if !enabled {
+			return None;
+		}
+		let ptr = name as *const T;
+		let ptr = unsafe {
+			NonNull::new_unchecked(ptr as *mut T)
+		};
+		Some(BorrowDisplay(ptr))
+	}
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct WriteSink<W: Write = StderrWriter, M: ChannelFilterMap = InvisibleChannelFilterMap> {
 	pub channel_map: M,
 	pub colors: bool,
