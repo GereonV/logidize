@@ -1,12 +1,13 @@
 use std::{marker::PhantomData, cell::Cell};
 use super::*;
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
 	sink: S,
 	_unsync: PhantomData<Cell<()>>,
 }
 
+#[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
 	channel_id: usize,
 	sink: &'a S,

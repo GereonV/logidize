@@ -1,7 +1,7 @@
 use std::sync::{Mutex, LockResult, MutexGuard};
 use super::*;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
 	sink: Mutex<S>,
 }
@@ -12,6 +12,7 @@ impl<S: Sink + Clone> Clone for SimpleLogger<S> {
 	}
 }
 
+#[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
 	id: usize,
 	sink: &'a Mutex<S>,
