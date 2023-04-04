@@ -8,6 +8,7 @@ pub mod loggers;
 pub mod sinks;
 pub mod writers;
 
+#[doc(hidden)]
 pub use loggers::Logger;
 
 use crate::{
