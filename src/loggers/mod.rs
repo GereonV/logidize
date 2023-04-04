@@ -60,3 +60,37 @@ pub trait Logger {
     fn    error(&self, message: Arguments) { self.log(Level::ERROR,    message); }
     fn critical(&self, message: Arguments) { self.log(Level::CRITICAL, message); }
 }
+
+#[derive(Clone, Copy, Debug, Default, Hash)]
+pub struct MultiLogger<T1: Logger, T2: Logger>(pub T1, pub T2);
+
+macro_rules! impl_levels {
+	($($lvl:ident),*) => {
+		$(
+			fn $lvl(&self, message: Arguments) {
+				self.0.$lvl(message);
+				self.1.$lvl(message);
+			}
+		)*
+	};
+}
+
+impl<T1: Logger, T2: Logger> Logger for MultiLogger<T1, T2> {
+	fn log(&self, severity: Level, message: Arguments) {
+		self.0.log(severity, message);
+		self.1.log(severity, message);
+	}
+
+	impl_levels!(debug, info, warning, error, critical);
+}
+
+#[macro_export]
+macro_rules! multi_logger {
+    ($head:expr, $tail:expr $(,)?) => {
+        $crate::loggers::MultiLogger($head, $tail)
+    };
+
+    ($head:expr, $($tail:expr),+ $(,)?) => {
+        $crate::loggers::MultiLogger($head, multi_sink!($($tail),+))
+    };
+}
