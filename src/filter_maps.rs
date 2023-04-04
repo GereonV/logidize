@@ -91,6 +91,7 @@ impl<T: Display + Default> Default for SimpleChannel<T> {
 
 impl<T: Display> SimpleChannel<T> {
     /// ```
+    /// # use logidize::{filter_maps::SimpleChannel, loggers::Level};
     /// let c1 = SimpleChannel::new(0);
     /// let c2 = SimpleChannel { enabled: true, min_severity: Level::DEBUG, name: 0 };
     /// assert_eq!(c1, c2);
