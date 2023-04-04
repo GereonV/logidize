@@ -1,3 +1,5 @@
+//! [Logger]s for use in a multi-threaded context.
+
 use std::sync::{Mutex, LockResult, MutexGuard};
 
 use crate::{
@@ -5,6 +7,7 @@ use crate::{
     sinks::Sink,
 };
 
+/// Thread-safe version of [single_threaded::SimpleLogger](super::single_threaded::SimpleLogger).
 #[derive(Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
     sink: Mutex<S>,
@@ -16,6 +19,7 @@ impl<S: Sink + Clone> Clone for SimpleLogger<S> {
     }
 }
 
+/// Thread-safe version of [single_threaded::ChannelLogger](super::single_threaded::ChannelLogger).
 #[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
     id: usize,
@@ -30,21 +34,29 @@ impl<S: Sink> Clone for ChannelLogger<'_, S> {
 }
 
 impl<S: Sink> SimpleLogger<S> {
+    /// Constructs a new [SimpleLogger].
     #[must_use]
     pub const fn new(sink: S) -> Self {
         Self { sink: Mutex::new(sink) }
     }
 
+    /// Constructs a new [ChannelLogger] to this logger's [Sink].
     #[must_use]
     pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
         ChannelLogger { id: channel_id, sink: &self.sink }
     }
 
+    /// Grants access to underlying [Sink].
+    /// 
+    /// See [Mutex::lock()].
 	#[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
         self.sink.lock()
     }
 
+    /// Consumes this logger, returning the underlying [Sink].
+    /// 
+    /// See [Mutex::into_inner()].
     #[must_use]
     pub fn into_sink(self) -> LockResult<S> {
         self.sink.into_inner()
@@ -52,11 +64,15 @@ impl<S: Sink> SimpleLogger<S> {
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
+    /// Returns ID of the channel this logger logs to.
     #[must_use]
     pub const fn id(&self) -> usize {
         self.id
     }
 
+    /// Grants access to underlying [Sink].
+    /// 
+    /// See [Mutex::lock()].
     #[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
         self.sink.lock()

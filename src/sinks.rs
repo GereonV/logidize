@@ -1,3 +1,5 @@
+//! Sensible [Sink]s.
+
 use std::time::UNIX_EPOCH;
 
 use crate::{
@@ -7,7 +9,9 @@ use crate::{
     writers::{StderrWriter, Write},
 };
 
+/// A trait for objects which are [LogObject] sinks.
 pub trait Sink {
+    /// Consumes a [LogObject] (i.e. logs it).
     fn consume(&mut self, log_object: LogObject);
 }
 
@@ -17,17 +21,25 @@ impl<T: FnMut(LogObject)> Sink for T {
     }
 }
 
+/// A [Sink] that outputs formatted [LogObject]s via a [ChannelFilterMap] to a [Write].
 #[derive(Clone, Copy, Debug)]
 pub struct WriteSink<W: Write = StderrWriter, M: ChannelFilterMap = InvisibleChannelFilterMap> {
+    /// The [ChannelFilterMap] used.
     pub channel_map: M,
+    /// Whether the output should be colored.
     pub colors: bool,
+    /// Whether the [ThreadId](std::thread::ThreadId) should be included in the logs.
     pub log_thread_id: bool,
+    /// The sink's minimum severity level. [WriteSink] won't log [LogObject]s of lower severity.
     pub min_severity: Level,
+    /// Whether the sink is muted. A muted [WriteSink] won't log anything.
     pub muted: bool,
+    /// The underlying [Write].
     pub output: W,
 }
 
 impl<W: Write, M: ChannelFilterMap> WriteSink<W, M> {
+    /// Constructs a new [WriteSink] with default settings (that shouldn't be relied upon).
     #[must_use]
     pub const fn new(output: W, channel_map: M) -> Self {
         Self {
@@ -75,6 +87,7 @@ impl<W: Write, M: ChannelFilterMap> Sink for WriteSink<W, M> {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct MultiSink<T1: Sink, T2: Sink>(pub T1, pub T2);
 
@@ -85,6 +98,7 @@ impl<T1: Sink, T2: Sink> Sink for MultiSink<T1, T2> {
     }
 }
 
+/// Creates a `MultiSink` with the given given sink expressions.
 #[macro_export]
 macro_rules! multi_sink {
     ($head:expr, $tail:expr $(,)?) => {

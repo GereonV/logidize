@@ -1,5 +1,9 @@
+//! Sensible [Write]rs.
+
+#[doc(no_inline)]
 pub use std::io::Write;
 
+/// A [Write] that writes to [Stderr](std::io::Stderr).
 #[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct StderrWriter;
 
@@ -13,6 +17,7 @@ impl Write for StderrWriter {
     }
 }
 
+/// A [Write] that writes to [Stdout](std::io::Stdout).
 #[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct StdoutWriter;
 
@@ -26,6 +31,7 @@ impl Write for StdoutWriter {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct MultiWriter<T1: Write, T2: Write>(pub T1, pub T2);
 
@@ -39,6 +45,7 @@ impl<T1: Write, T2: Write> Write for MultiWriter<T1, T2> {
     }
 }
 
+/// Creates a `MultiWriter` with the given given writer expressions.
 #[macro_export]
 macro_rules! multi_writer {
     ($head:expr, $tail:expr $(,)?) => {

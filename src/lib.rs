@@ -1,3 +1,7 @@
+//! A lightweight and performant logging utility
+
+#![warn(missing_docs)]
+
 pub mod colors;
 pub mod filter_maps;
 pub mod loggers;
@@ -12,13 +16,16 @@ use crate::{
 };
 
 // Default::default() is not const
+/// A sensible default logger for use in multithreaded applications.
 pub static GLOBAL_LOGGER: SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilterMap<String>>> = SimpleLogger::new(
     WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
 );
 
+/// Overrides macro [default_logger!] to refer to custom default [Logger](loggers::Logger).
 #[macro_export]
 macro_rules! set_default_logger {
 	($($logger:tt)*) => {
+        /// Invoked to retrieve a default [loggers::Logger] in logging-macros like [log!].
 		#[macro_export]
 		macro_rules! default_logger {
 			() => {
@@ -30,6 +37,9 @@ macro_rules! set_default_logger {
 
 set_default_logger!($crate::GLOBAL_LOGGER);
 
+/// Invokes [Logger::log()](loggers::Logger::log()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! log {
     ($lvl:expr, $fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
@@ -41,6 +51,9 @@ macro_rules! log {
     };
 }
 
+/// Invokes [Logger::debug()](loggers::Logger::debug()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! debug {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
@@ -52,6 +65,10 @@ macro_rules! debug {
     };
 }
 
+
+/// Invokes [Logger::info()](loggers::Logger::info()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! info {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
@@ -63,6 +80,9 @@ macro_rules! info {
     };
 }
 
+/// Invokes [Logger::warning()](loggers::Logger::warning()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! warning {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
@@ -74,6 +94,9 @@ macro_rules! warning {
     };
 }
 
+/// Invokes [Logger::error()](loggers::Logger::error()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! error {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
@@ -85,6 +108,9 @@ macro_rules! error {
     };
 }
 
+/// Invokes [Logger::critical()](loggers::Logger::critical()) using [format_args!].
+/// 
+/// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! critical {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {

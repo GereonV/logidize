@@ -1,3 +1,5 @@
+//! [Logger]s for use in a single-threaded context.
+
 use std::{marker::PhantomData, cell::Cell};
 
 use crate::{
@@ -5,12 +7,23 @@ use crate::{
     sinks::Sink,
 };
 
+/// A [Logger] creating [LogObject]s and passing them to [Sink::consume()].
+/// 
+/// [SimpleLogger] creates [LogObject]s on the main-channel (`0`).
+/// 
+/// [SimpleLogger] implements `!Sync` so that only one thread can access the underlying [Sink] at a time.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
     sink: S,
     _unsync: PhantomData<Cell<()>>,
 }
 
+/// A [Logger] creating [LogObject]s and passing them to [Sink::consume()].
+/// 
+/// [ChannelLogger] creates [LogObject]s on the channel [ChannelLogger::id()].
+/// [ChannelLogger]s are created with [SimpleLogger::channel()].
+/// 
+/// [ChannelLogger] implements `!Send + !Sync` so that only one thread can access the underlying [Sink] at a time.
 #[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
     channel_id: usize,
@@ -26,17 +39,21 @@ impl<S: Sink> Clone for ChannelLogger<'_, S> {
 }
 
 impl<S: Sink> SimpleLogger<S> {
+    /// Constructs a new [SimpleLogger].
     #[must_use]
     pub const fn new(sink: S) -> Self {
         Self { sink, _unsync: PhantomData }
     }
 
+    /// Constructs a new [ChannelLogger] to this logger's [Sink].
     #[must_use]
     pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
         ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
     }
 
-    // can't be called simultaneously due to thread-limitations
+    /// Grants access to underlying [Sink].
+    /// 
+    /// This is safe due to the threading limitations on [SimpleLogger] and [ChannelLogger].
     #[must_use]
     pub fn sink(&self) -> &mut S {
         let ptr: *const S = &self.sink;
@@ -44,6 +61,7 @@ impl<S: Sink> SimpleLogger<S> {
         unsafe { &mut *ptr }
     }
 
+    /// Consumes this logger, returning the underlying [Sink].
     #[must_use]
     pub fn into_sink(self) -> S {
         self.sink
@@ -51,11 +69,15 @@ impl<S: Sink> SimpleLogger<S> {
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
+    /// Returns ID of the channel this logger logs to.
     #[must_use]
     pub const fn id(&self) -> usize {
         self.channel_id
     }
 
+    /// Grants access to underlying [Sink].
+    /// 
+    /// This is safe due to the threading limitations on [SimpleLogger] and [ChannelLogger].
     #[must_use]
     pub fn sink(&self) -> &mut S {
         let ptr: *const S = self.sink;
