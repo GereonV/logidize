@@ -1,5 +1,9 @@
 use std::sync::{Mutex, LockResult, MutexGuard};
-use super::*;
+
+use crate::{
+    loggers::{Arguments, Level, Logger, LogObject},
+    sinks::Sink,
+};
 
 #[derive(Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
@@ -68,6 +72,7 @@ impl<S: Sink> Logger for ChannelLogger<'_, S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::debug;
 
     #[test]
     fn test_simple() {

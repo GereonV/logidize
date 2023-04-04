@@ -1,4 +1,10 @@
-use logidize::{*, single_threaded::*, utils::{filter_maps::{InvisibleChannelFilterMap, SimpleChannel, StaticSeverityChannelFilterMap}, GLOBAL_LOGGER, sinks::WriteSink, writers::{MultiWriter, StderrWriter, StdoutWriter}}};
+use logidize::{
+    *,
+    loggers::{Level, Logger, single_threaded::*},
+    filter_maps::{InvisibleChannelFilterMap, SimpleChannel, StaticSeverityChannelFilterMap},
+    sinks::WriteSink,
+    writers::{MultiWriter, StderrWriter, StdoutWriter}
+};
 
 fn main() {
     debug!("disabled channel");
@@ -6,7 +12,7 @@ fn main() {
     warning!("disabled channel");
     error!("disabled channel");
     critical!("disabled channel");
-    GLOBAL_LOGGER.sink().unwrap().channel_map.insert_channel(0, SimpleChannel::new("Main-Channel".into()));
+    default_logger!().sink().unwrap().channel_map.insert_channel(0, SimpleChannel::new("Main-Channel".into()));
     debug!("debug");
     info!("info");
     warning!("warning");

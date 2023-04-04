@@ -1,5 +1,9 @@
 use std::{marker::PhantomData, cell::Cell};
-use super::*;
+
+use crate::{
+    loggers::{Arguments, Level, Logger, LogObject},
+    sinks::Sink,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
@@ -68,9 +72,10 @@ impl<S: Sink> Logger for ChannelLogger<'_, S> {
 
 #[cfg(test)]
 mod tests {
-    use std::time::SystemTime;
+    use std::{thread, time::SystemTime};
 
     use super::*;
+    use crate::{debug, log};
 
     #[test]
     fn test_simple() {

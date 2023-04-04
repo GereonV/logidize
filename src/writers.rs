@@ -1,4 +1,4 @@
-use std::io::Write;
+pub use std::io::Write;
 
 #[derive(Clone, Copy, Debug, Default, Hash)]
 pub struct StderrWriter;

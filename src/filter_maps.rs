@@ -1,6 +1,6 @@
 use std::{collections::btree_map::{BTreeMap, Entry}, fmt::Display, ptr::NonNull};
 
-use crate::{Level, LogObject};
+use crate::loggers::{Level, LogObject};
 
 pub trait ChannelFilterMap {
     type DisplayType: Display;

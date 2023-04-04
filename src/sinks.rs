@@ -1,7 +1,21 @@
-use std::{io::Write, time::UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
-use crate::{Level, LogObject, Sink};
-use super::{colors::{Colored, RESET_COLOR, SET_COLOR_BRIGHT_GREEN, SET_COLOR_BRIGHT_WHITE}, filter_maps::{ChannelFilterMap, InvisibleChannelFilterMap}, writers::StderrWriter};
+use crate::{
+    colors::{Colored, RESET_COLOR, SET_COLOR_BRIGHT_GREEN, SET_COLOR_BRIGHT_WHITE},
+    filter_maps::{ChannelFilterMap, InvisibleChannelFilterMap},
+    loggers::{Level, LogObject},
+    writers::{StderrWriter, Write},
+};
+
+pub trait Sink {
+    fn consume(&mut self, log_object: LogObject);
+}
+
+impl<T: FnMut(LogObject)> Sink for T {
+    fn consume(&mut self, log_object: LogObject) {
+        self(log_object);
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct WriteSink<W: Write = StderrWriter, M: ChannelFilterMap = InvisibleChannelFilterMap> {
@@ -83,11 +97,14 @@ macro_rules! multi_sink {
 
 #[cfg(test)]
 mod tests {
-    use std::{fmt::Write, mem::MaybeUninit, time::{SystemTime, UNIX_EPOCH}, thread};
+    use std::{mem::MaybeUninit, time::{SystemTime, UNIX_EPOCH}, thread};
 
-    use crate::{single_threaded::SimpleLogger, Level, Logger, log, debug, info, warning, error, critical, utils::colors::*};
-
-    use super::WriteSink;
+    use super::*;
+    use crate::{
+        colors::*,
+        log, debug, info, warning, error, critical,
+        loggers::{Logger, single_threaded::SimpleLogger},
+    };
 
     fn log_to_string(f: impl FnOnce(&SimpleLogger<WriteSink<Vec<u8>>>)) -> String {
         let logger = Default::default();
@@ -128,8 +145,7 @@ mod tests {
             logger.sink().colors = false;
             logger.sink().log_thread_id = false;
         });
-        let mut expected_output = String::new();
-        let _ = write!(&mut expected_output,
+        let expected_output = format!(
             "[{time}][DEBUG][0]: debug\n\
              [{time}][INFO][0]: info\n\
              [{time}][WARNING][0]: warning\n\
@@ -155,9 +171,8 @@ mod tests {
             logger.sink().colors = true;
             logger.sink().log_thread_id = true;
         });
-        let mut expected_output = String::new();
         let id: u64 = unsafe { std::mem::transmute(thread::current().id()) };
-        let _ = write!(&mut expected_output,
+        let expected_output = format!(
             "[{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_CYAN}DEBUG{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: debug\n\
              [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_BLUE}INFO{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: info\n\
              [{SET_COLOR_BRIGHT_WHITE}{id}{RESET_COLOR}][{SET_COLOR_BRIGHT_GREEN}{time}{RESET_COLOR}][{SET_COLOR_BRIGHT_YELLOW}WARNING{RESET_COLOR}][{SET_COLOR_BRIGHT_WHITE}0{RESET_COLOR}]: warning\n\

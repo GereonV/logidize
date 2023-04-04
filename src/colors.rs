@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::Level;
+use crate::loggers::Level;
 use const_format::concatcp;
 
 pub const SET_COLOR_BRIGHT_RED     : &str = "\x1b[1;31m";

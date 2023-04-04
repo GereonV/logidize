@@ -1,49 +1,39 @@
-use std::{thread::{self, ThreadId}, time::SystemTime, fmt::{Display,  Arguments}};
+pub mod colors;
+pub mod filter_maps;
+pub mod loggers;
+pub mod sinks;
+pub mod writers;
 
-pub mod single_threaded;
-pub mod multi_threaded;
-pub mod utils;
+use crate::{
+	filter_maps::SimpleChannelFilterMap,
+	loggers::multi_threaded::SimpleLogger,
+	sinks::WriteSink,
+	writers::StderrWriter,
+};
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Level {
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    CRITICAL,
+// Default::default() is not const
+pub static GLOBAL_LOGGER: SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilterMap<String>>> = SimpleLogger::new(
+    WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
+);
+
+#[macro_export]
+macro_rules! set_default_logger {
+	($($logger:tt)*) => {
+		#[macro_export]
+		macro_rules! default_logger {
+			() => {
+				$($logger)*
+			};
+		}
+	};
 }
 
-impl Level {
-    pub const fn as_str(&self) -> &'static str {
-        match self {
-            Level::DEBUG    => "DEBUG",
-            Level::INFO     => "INFO",
-            Level::WARNING  => "WARNING",
-            Level::ERROR    => "ERROR",
-            Level::CRITICAL => "CRITICAL",
-        }
-    }
-}
-
-impl Display for Level {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-pub trait Logger {
-    fn log(&self, severity: Level, message: Arguments);
-    fn    debug(&self, message: Arguments) { self.log(Level::DEBUG,    message); }
-    fn     info(&self, message: Arguments) { self.log(Level::INFO,     message); }
-    fn  warning(&self, message: Arguments) { self.log(Level::WARNING,  message); }
-    fn    error(&self, message: Arguments) { self.log(Level::ERROR,    message); }
-    fn critical(&self, message: Arguments) { self.log(Level::CRITICAL, message); }
-}
+set_default_logger!($crate::GLOBAL_LOGGER);
 
 #[macro_export]
 macro_rules! log {
     ($lvl:expr, $fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        log!(global_logger!(), $lvl, $fmt, $($($($args),+)?)?)
+        $crate::log!(default_logger!(), $lvl, $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $lvl:expr, $($args:tt),+$(,)?) => {
@@ -54,7 +44,7 @@ macro_rules! log {
 #[macro_export]
 macro_rules! debug {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        debug!(global_logger!(), $fmt, $($($($args),+)?)?)
+        $crate::debug!(default_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -65,7 +55,7 @@ macro_rules! debug {
 #[macro_export]
 macro_rules! info {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        info!(global_logger!(), $fmt, $($($($args),+)?)?)
+        $crate::info!(default_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -76,7 +66,7 @@ macro_rules! info {
 #[macro_export]
 macro_rules! warning {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        warning!(global_logger!(), $fmt, $($($($args),+)?)?)
+        $crate::warning!(default_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -87,7 +77,7 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! error {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        error!(global_logger!(), $fmt, $($($($args),+)?)?)
+        $crate::error!(default_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
@@ -98,41 +88,10 @@ macro_rules! error {
 #[macro_export]
 macro_rules! critical {
     ($fmt:literal$(, $($($args:tt),+$(,)?)?)?) => {
-        critical!(global_logger!(), $fmt, $($($($args),+)?)?)
+        $crate::critical!(default_logger!(), $fmt, $($($($args),+)?)?)
     };
 
     ($logger:expr, $($args:tt),+$(,)?) => {
         $logger.critical(format_args!($($args),+))
     };
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct LogObject<'a> {
-    pub channel_id: usize, // 0 = no channel
-    pub message: Arguments<'a>,
-    pub severity: Level,
-    pub thread_id: ThreadId,
-    pub time: SystemTime,
-}
-
-impl LogObject<'_> {
-    fn new<'a>(channel_id: usize, severity: Level, message: Arguments<'a>) -> LogObject<'a> {
-        LogObject {
-            channel_id,
-            message,
-            severity,
-            thread_id: thread::current().id(),
-            time: SystemTime::now(),
-        }
-    }
-}
-
-pub trait Sink {
-    fn consume(&mut self, log_object: LogObject);
-}
-
-impl<T: FnMut(LogObject)> Sink for T {
-    fn consume(&mut self, log_object: LogObject) {
-        self(log_object);
-    }
 }
