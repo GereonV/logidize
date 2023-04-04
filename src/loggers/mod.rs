@@ -42,12 +42,12 @@ impl Display for Level {
 }
 
 /// A log-message with metadata.
-/// 
+///
 /// Used by [single_threaded::SimpleLogger], [single_threaded::ChannelLogger], [multi_threaded::SimpleLogger], [multi_threaded::ChannelLogger].
 #[derive(Clone, Copy, Debug)]
 pub struct LogObject<'a> {
     /// The ID of the channel the log-request originated from.
-    /// 
+    ///
     /// The main-channel (implicitly used by `SimpleLogger`s) has ID `0`.
     pub channel_id: usize,
 
@@ -66,7 +66,7 @@ pub struct LogObject<'a> {
 
 impl LogObject<'_> {
     /// Constructs a new [LogObject] with information about call-time calling thread.
-    /// 
+    ///
     /// ```
     /// # use std::{thread, time::SystemTime};
     /// # use logidize::loggers::{Level, LogObject};

@@ -1,13 +1,13 @@
 [package]
 name = "logidize"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["GereonV"]
 edition = "2021"
 description = "A lightweight and performant logging utility"
 documentation = "https://docs.rs/logidize"
 readme = "README.md"
 repository = "https://github.com/GereonV/logidize"
-license = "MIT" 
+license = "MIT"
 keywords = ["log", "logger", "logging"]
 categories = ["development-tools::debugging"]
 

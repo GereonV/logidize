@@ -8,9 +8,9 @@ use crate::{
 };
 
 /// A [Logger] creating [LogObject]s and passing them to [Sink::consume()].
-/// 
+///
 /// [SimpleLogger] creates [LogObject]s on the main-channel (`0`).
-/// 
+///
 /// [SimpleLogger] implements `!Sync` so that only one thread can access the underlying [Sink] at a time.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimpleLogger<S: Sink> {
@@ -19,10 +19,10 @@ pub struct SimpleLogger<S: Sink> {
 }
 
 /// A [Logger] creating [LogObject]s and passing them to [Sink::consume()].
-/// 
+///
 /// [ChannelLogger] creates [LogObject]s on the channel [ChannelLogger::id()].
 /// [ChannelLogger]s are created with [SimpleLogger::channel()].
-/// 
+///
 /// [ChannelLogger] implements `!Send + !Sync` so that only one thread can access the underlying [Sink] at a time.
 #[derive(Debug)]
 pub struct ChannelLogger<'a, S: Sink> {
@@ -52,7 +52,7 @@ impl<S: Sink> SimpleLogger<S> {
     }
 
     /// Grants access to underlying [Sink].
-    /// 
+    ///
     /// This is safe due to the threading limitations on [SimpleLogger] and [ChannelLogger].
     #[must_use]
     pub fn sink(&self) -> &mut S {
@@ -76,7 +76,7 @@ impl<S: Sink> ChannelLogger<'_, S> {
     }
 
     /// Grants access to underlying [Sink].
-    /// 
+    ///
     /// This is safe due to the threading limitations on [SimpleLogger] and [ChannelLogger].
     #[must_use]
     pub fn sink(&self) -> &mut S {

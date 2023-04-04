@@ -47,7 +47,7 @@ impl<S: Sink> SimpleLogger<S> {
     }
 
     /// Grants access to underlying [Sink].
-    /// 
+    ///
     /// See [Mutex::lock()].
 	#[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
@@ -55,7 +55,7 @@ impl<S: Sink> SimpleLogger<S> {
     }
 
     /// Consumes this logger, returning the underlying [Sink].
-    /// 
+    ///
     /// See [Mutex::into_inner()].
     #[must_use]
     pub fn into_sink(self) -> LockResult<S> {
@@ -71,7 +71,7 @@ impl<S: Sink> ChannelLogger<'_, S> {
     }
 
     /// Grants access to underlying [Sink].
-    /// 
+    ///
     /// See [Mutex::lock()].
     #[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {

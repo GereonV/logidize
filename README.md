@@ -9,12 +9,12 @@ use logidize::{*, loggers::{Level, single_threaded::*}, sinks::WriteSink};
 
 fn main() {
     let logger: SimpleLogger<WriteSink> = Default::default();
-	debug!(logger, "{}", "Hello Debug!");
-	info!(logger, "{}", "Hello Info!");
-	warning!(logger, "{}", "Hello Warning!");
-	error!(logger, "{}", "Hello Error!");
-	critical!(logger, "{}", "Hello Critical!");
-	log!(logger, Level::DEBUG, "{}", "Hello Dynamic!");
+    debug!(logger, "{}", "Hello Debug!");
+    info!(logger, "{}", "Hello Info!");
+    warning!(logger, "{}", "Hello Warning!");
+    error!(logger, "{}", "Hello Error!");
+    critical!(logger, "{}", "Hello Critical!");
+    log!(logger, Level::DEBUG, "{}", "Hello Dynamic!");
 }
 ```
 
@@ -23,9 +23,9 @@ fn main() {
 use logidize::*;
 
 fn main() {
-	default_logger!().sink().unwrap()
+    default_logger!().sink().unwrap()
         .channel_map.set_channel_name_or_insert_channel(0, "Main-Channel");
-	debug!("logged to global logger's main-channel");
+    debug!("logged to global logger's main-channel");
 }
 ```
 
@@ -36,6 +36,6 @@ use logidize::{*, loggers::single_threaded::*, sinks::WriteSink};
 fn main() {
     let logger: SimpleLogger<WriteSink> = Default::default();
     macro_rules! default_logger { () => { logger }; }
-	info!("you can change what logger the macros default to");
+    info!("you can change what logger the macros default to");
 }
 ```

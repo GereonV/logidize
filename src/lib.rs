@@ -33,7 +33,7 @@ macro_rules! default_logger {
 }
 
 /// Invokes [Logger::log()](loggers::Logger::log()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! log {
@@ -47,7 +47,7 @@ macro_rules! log {
 }
 
 /// Invokes [Logger::debug()](loggers::Logger::debug()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! debug {
@@ -62,7 +62,7 @@ macro_rules! debug {
 
 
 /// Invokes [Logger::info()](loggers::Logger::info()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! info {
@@ -76,7 +76,7 @@ macro_rules! info {
 }
 
 /// Invokes [Logger::warning()](loggers::Logger::warning()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! warning {
@@ -90,7 +90,7 @@ macro_rules! warning {
 }
 
 /// Invokes [Logger::error()](loggers::Logger::error()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! error {
@@ -104,7 +104,7 @@ macro_rules! error {
 }
 
 /// Invokes [Logger::critical()](loggers::Logger::critical()) using [format_args!].
-/// 
+///
 /// Defaults to using [default_logger!].
 #[macro_export]
 macro_rules! critical {
