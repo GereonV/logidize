@@ -87,11 +87,11 @@ impl<T1: Sink, T2: Sink> Sink for MultiSink<T1, T2> {
 #[macro_export]
 macro_rules! multi_sink {
     ($head:expr, $tail:expr $(,)?) => {
-        MultiSink($head, $tail)
+        $crate::sinks::MultiSink($head, $tail)
     };
 
     ($head:expr, $($tail:expr),+ $(,)?) => {
-        MultiSink($head, multi_sink!($($tail),+))
+        $crate::sinks::MultiSink($head, multi_sink!($($tail),+))
     };
 }
 

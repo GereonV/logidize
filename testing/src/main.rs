@@ -3,7 +3,7 @@ use logidize::{
     loggers::{Level, Logger, single_threaded::*},
     filter_maps::{InvisibleChannelFilterMap, SimpleChannel, StaticSeverityChannelFilterMap},
     sinks::WriteSink,
-    writers::{MultiWriter, StderrWriter, StdoutWriter}
+    writers::{StderrWriter, StdoutWriter}
 };
 
 fn main() {
@@ -41,7 +41,7 @@ fn main() {
     critical!(logger, "unfiltered 2");
 
     let logger = SimpleLogger::new(WriteSink::new(
-        StderrWriter::default(),
+        StderrWriter,
         StaticSeverityChannelFilterMap(&[
             ("Main-Channel"     , Level::INFO),
             ("Rendering-Channel", Level::WARNING),

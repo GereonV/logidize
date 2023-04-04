@@ -42,10 +42,10 @@ impl<T1: Write, T2: Write> Write for MultiWriter<T1, T2> {
 #[macro_export]
 macro_rules! multi_writer {
     ($head:expr, $tail:expr $(,)?) => {
-        MultiWriter($head, $tail)
+        $crate::writers::MultiWriter($head, $tail)
     };
 
     ($head:expr, $($tail:expr),+ $(,)?) => {
-        MultiWriter($head, multi_writer!($($tail),+))
+        $crate::writers::MultiWriter($head, multi_writer!($($tail),+))
     };
 }
