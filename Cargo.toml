@@ -1,6 +1,6 @@
 [package]
 name = "logidize"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["GereonV"]
 edition = "2021"
 description = "A lightweight and performant logging utility"
