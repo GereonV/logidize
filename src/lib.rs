@@ -8,6 +8,8 @@ pub mod loggers;
 pub mod sinks;
 pub mod writers;
 
+pub use loggers::Logger;
+
 use crate::{
 	filter_maps::SimpleChannelFilterMap,
 	loggers::multi_threaded::SimpleLogger,
@@ -21,21 +23,13 @@ pub static GLOBAL_LOGGER: SimpleLogger<WriteSink<StderrWriter, SimpleChannelFilt
     WriteSink::new(StderrWriter, SimpleChannelFilterMap::new())
 );
 
-/// Overrides macro [default_logger!] to refer to custom default [Logger](loggers::Logger).
+/// Invoked to retrieve a default [Logger](loggers::Logger) in logging-macros like [log!].
 #[macro_export]
-macro_rules! set_default_logger {
-	($($logger:tt)*) => {
-        /// Invoked to retrieve a default [loggers::Logger] in logging-macros like [log!].
-		#[macro_export]
-		macro_rules! default_logger {
-			() => {
-				$($logger)*
-			};
-		}
-	};
+macro_rules! default_logger {
+    () => {
+        $crate::GLOBAL_LOGGER
+    };
 }
-
-set_default_logger!($crate::GLOBAL_LOGGER);
 
 /// Invokes [Logger::log()](loggers::Logger::log()) using [format_args!].
 /// 
