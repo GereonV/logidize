@@ -5,6 +5,7 @@ use crate::loggers::{Level, LogObject};
 pub trait ChannelFilterMap {
     type DisplayType: Display;
 
+    #[must_use]
     fn filter_map(&mut self, log_object: &LogObject) -> Option<Self::DisplayType>;
 }
 
@@ -75,6 +76,7 @@ impl<T: Display + Default> Default for SimpleChannel<T> {
 }
 
 impl<T: Display> SimpleChannel<T> {
+    #[must_use]
     pub const fn new(name: T) -> Self {
         Self { enabled: true, min_severity: Level::DEBUG, name }
     }
@@ -92,14 +94,17 @@ impl<T: Display> Default for SimpleChannelFilterMap<T> {
 }
 
 impl<T: Display> SimpleChannelFilterMap<T> {
+    #[must_use]
     pub const fn new() -> Self {
         Self { channels: BTreeMap::new() }
     }
 
+    #[must_use]
     pub fn channel(&self, channel_id: usize) -> Option<&SimpleChannel<T>> {
         self.channels.get(&channel_id)
     }
 
+    #[must_use]
     pub fn channel_mut(&mut self, channel_id: usize) -> Option<&mut SimpleChannel<T>> {
         self.channels.get_mut(&channel_id)
     }
@@ -126,6 +131,7 @@ impl<T: Display> SimpleChannelFilterMap<T> {
             .or_insert_with_key(f2)
     }
 
+    #[must_use]
     pub fn channel_name(&self, channel_id: usize) -> Option<&T> {
         self.channel(channel_id).map(|channel| &channel.name)
     }
@@ -143,6 +149,7 @@ impl<T: Display> SimpleChannelFilterMap<T> {
         }
     }
 
+    #[must_use]
     pub fn channel_enabled(&self, channel_id: usize) -> Option<bool> {
         self.channel(channel_id).map(|channel| channel.enabled)
     }
@@ -152,6 +159,7 @@ impl<T: Display> SimpleChannelFilterMap<T> {
         Some(std::mem::replace(&mut channel.enabled, enabled))
     }
 
+    #[must_use]
     pub fn channel_min_severity(&self, channel_id: usize) -> Option<Level> {
         self.channel(channel_id).map(|channel| channel.min_severity)
     }

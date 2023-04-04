@@ -26,31 +26,37 @@ impl<S: Sink> Clone for ChannelLogger<'_, S> {
 }
 
 impl<S: Sink> SimpleLogger<S> {
+    #[must_use]
     pub const fn new(sink: S) -> Self {
         Self { sink, _unsync: PhantomData }
     }
 
+    #[must_use]
     pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
         ChannelLogger { channel_id, sink: &self.sink, _unsendsync: PhantomData }
     }
 
     // can't be called simultaneously due to thread-limitations
+    #[must_use]
     pub fn sink(&self) -> &mut S {
         let ptr: *const S = &self.sink;
         let ptr = ptr as *mut S;
         unsafe { &mut *ptr }
     }
 
+    #[must_use]
     pub fn into_sink(self) -> S {
         self.sink
     }
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
+    #[must_use]
     pub const fn id(&self) -> usize {
         self.channel_id
     }
 
+    #[must_use]
     pub fn sink(&self) -> &mut S {
         let ptr: *const S = self.sink;
         let ptr = ptr as *mut S;

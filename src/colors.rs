@@ -17,6 +17,7 @@ pub const RESET_COLOR              : &str = "\x1b[0m";
 pub struct Colored(pub Level);
 
 impl Colored {
+    #[must_use]
     pub const fn as_str(&self) -> &'static str {
         match self.0 {
             Level::DEBUG    => concatcp!(SET_COLOR_BRIGHT_CYAN   , Level::DEBUG.as_str()   , RESET_COLOR),

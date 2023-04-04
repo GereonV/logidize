@@ -30,28 +30,34 @@ impl<S: Sink> Clone for ChannelLogger<'_, S> {
 }
 
 impl<S: Sink> SimpleLogger<S> {
+    #[must_use]
     pub const fn new(sink: S) -> Self {
         Self { sink: Mutex::new(sink) }
     }
 
+    #[must_use]
     pub const fn channel(&self, channel_id: usize) -> ChannelLogger<S> {
         ChannelLogger { id: channel_id, sink: &self.sink }
     }
 
+	#[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
         self.sink.lock()
     }
 
+    #[must_use]
     pub fn into_sink(self) -> LockResult<S> {
         self.sink.into_inner()
     }
 }
 
 impl<S: Sink> ChannelLogger<'_, S> {
+    #[must_use]
     pub const fn id(&self) -> usize {
         self.id
     }
 
+    #[must_use]
     pub fn sink(&self) -> LockResult<MutexGuard<'_, S>> {
         self.sink.lock()
     }

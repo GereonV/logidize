@@ -28,6 +28,7 @@ pub struct WriteSink<W: Write = StderrWriter, M: ChannelFilterMap = InvisibleCha
 }
 
 impl<W: Write, M: ChannelFilterMap> WriteSink<W, M> {
+    #[must_use]
     pub const fn new(output: W, channel_map: M) -> Self {
         Self {
             channel_map,
